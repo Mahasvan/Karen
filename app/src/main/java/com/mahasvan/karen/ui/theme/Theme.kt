@@ -1,58 +1,84 @@
 package com.mahasvan.karen.ui.theme
 
-import android.app.Activity
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.graphics.Color
+
+@Immutable
+data class AssistantPalette(
+    val sheetSurface: Color,
+    val userBubble: Color,
+    val assistantBubble: Color,
+    val textPrimary: Color,
+    val textSecondary: Color,
+    val scrim: Color,
+    val actionButton: Color,
+    val actionIconTint: Color,
+    val cardSurface: Color,
+)
+
+private val LightPalette = AssistantPalette(
+    sheetSurface = Color(0xFFFFFFFF),
+    userBubble = Color(0xFFF1F3F4),
+    assistantBubble = Color(0xFFFFFFFF),
+    textPrimary = Color(0xFF202124),
+    textSecondary = Color(0xFF5F6368),
+    scrim = Color(0x8C000000),
+    actionButton = Color(0xFFFFFFFF),
+    actionIconTint = Color(0xFF5F6368),
+    cardSurface = Color(0xFFF8F9FA),
+)
+
+private val DarkPalette = AssistantPalette(
+    sheetSurface = Color(0xFF1F1F1F),
+    userBubble = Color(0xFF3C4043),
+    assistantBubble = Color(0xFF2D2F31),
+    textPrimary = Color(0xFFE8EAED),
+    textSecondary = Color(0xFF9AA0A6),
+    scrim = Color(0xA6000000),
+    actionButton = Color(0xFF2D2F31),
+    actionIconTint = Color(0xFFE8EAED),
+    cardSurface = Color(0xFF2D2F31),
+)
+
+val LocalAssistantPalette = staticCompositionLocalOf { LightPalette }
+
+object AssistantTheme {
+    val palette: AssistantPalette
+        @Composable @ReadOnlyComposable get() = LocalAssistantPalette.current
+}
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = GoogleBlue,
+    secondary = GoogleGreen,
+    tertiary = GoogleYellow,
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    primary = GoogleBlue,
+    secondary = GoogleGreen,
+    tertiary = GoogleYellow,
 )
 
 @Composable
 fun KarenTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+    CompositionLocalProvider(
+        LocalAssistantPalette provides if (darkTheme) DarkPalette else LightPalette
+    ) {
+        MaterialTheme(
+            colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme,
+            typography = Typography,
+            content = content,
+        )
     }
-
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
 }
