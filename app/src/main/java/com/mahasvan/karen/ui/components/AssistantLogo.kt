@@ -16,13 +16,11 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.mahasvan.karen.ui.theme.GoogleBlue
-import com.mahasvan.karen.ui.theme.GoogleGreen
-import com.mahasvan.karen.ui.theme.GoogleRed
-import com.mahasvan.karen.ui.theme.GoogleYellow
+import com.mahasvan.karen.ui.theme.AssistantTheme
 import kotlin.math.min
 
-private data class LogoDot(val cx: Float, val cy: Float, val r: Float, val color: Color)
+/** Geometry only; colours come from the brand palette by index. */
+private data class LogoDot(val cx: Float, val cy: Float, val r: Float)
 
 /**
  * Circle centres and radii are lifted straight from the mockup SVG and re-originned to
@@ -30,24 +28,24 @@ private data class LogoDot(val cx: Float, val cy: Float, val r: Float, val color
  */
 private val SmallLogoViewport = Size(144.11f, 129.73f)
 private val SmallLogoDots = listOf(
-    LogoDot(39.51f, 39.51f, 39.51f, GoogleBlue),
-    LogoDot(103.51f, 58.51f, 19.55f, GoogleRed),
-    LogoDot(104.51f, 106.51f, 23.22f, GoogleYellow),
-    LogoDot(133.51f, 36.51f, 10.59f, GoogleGreen),
+    LogoDot(39.51f, 39.51f, 39.51f),
+    LogoDot(103.51f, 58.51f, 19.55f),
+    LogoDot(104.51f, 106.51f, 23.22f),
+    LogoDot(133.51f, 36.51f, 10.59f),
 )
 
 private val HeroLogoViewport = Size(278.09f, 249.31f)
 private val HeroLogoDots = listOf(
-    LogoDot(75.78f, 75.78f, 75.78f, GoogleBlue),
-    LogoDot(199.78f, 111.78f, 37.50f, GoogleRed),
-    LogoDot(200.78f, 204.78f, 44.53f, GoogleYellow),
-    LogoDot(257.78f, 69.78f, 20.31f, GoogleGreen),
+    LogoDot(75.78f, 75.78f, 75.78f),
+    LogoDot(199.78f, 111.78f, 37.50f),
+    LogoDot(200.78f, 204.78f, 44.53f),
+    LogoDot(257.78f, 69.78f, 20.31f),
 )
 
 /** The inline avatar that precedes every assistant response. */
 @Composable
 fun AssistantAvatar(modifier: Modifier = Modifier, size: Dp = 28.dp) {
-    LogoCanvas(SmallLogoDots, SmallLogoViewport, modifier.size(size))
+    LogoCanvas(SmallLogoDots, SmallLogoViewport, AssistantTheme.brandColors, modifier.size(size))
 }
 
 /** The large resting "blob", breathing gently while the assistant is idle. */
@@ -70,6 +68,7 @@ fun AssistantHeroLogo(
     LogoCanvas(
         dots = HeroLogoDots,
         viewport = HeroLogoViewport,
+        colors = AssistantTheme.brandColors,
         modifier = modifier.size(size),
         scale = if (animate) pulse else 1f,
     )
@@ -79,6 +78,7 @@ fun AssistantHeroLogo(
 private fun LogoCanvas(
     dots: List<LogoDot>,
     viewport: Size,
+    colors: List<Color>,
     modifier: Modifier,
     scale: Float = 1f,
 ) {
@@ -86,9 +86,9 @@ private fun LogoCanvas(
         val fit = min(size.width / viewport.width, size.height / viewport.height) * scale
         val originX = (size.width - viewport.width * fit) / 2f
         val originY = (size.height - viewport.height * fit) / 2f
-        dots.forEach { dot ->
+        dots.forEachIndexed { index, dot ->
             drawCircle(
-                color = dot.color,
+                color = colors[index % colors.size],
                 radius = dot.r * fit,
                 center = Offset(originX + dot.cx * fit, originY + dot.cy * fit),
             )

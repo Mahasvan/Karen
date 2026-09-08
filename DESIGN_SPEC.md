@@ -50,32 +50,63 @@ intended for the sheet.
 
 ## 3. Theme & Design Tokens
 
-### 3.1 Brand colours
+### 3.1 Accent colours — Material You
 
-Taken verbatim from the SVG fills.
+The app uses **wallpaper-derived Material You colours**, not the Google brand palette.
+`minSdk` is 36, so `dynamicLightColorScheme` / `dynamicDarkColorScheme` are always available and
+no version guard is needed.
 
-| Token | Hex | Notes |
+Four distinguishable accents drive the logo dots, the voice visualizer, the glow bar and the
+suggestion grid. The three system accent families only yield three hues, so the fourth is a
+lighter tone of `accent1`:
+
+| Slot | Light | Dark |
 |---|---|---|
-| Google Blue | `#4285F4` | dominant; largest logo dot, keyboard glyph, links |
-| Google Red | `#EA4335` | |
-| Google Yellow | `#FBBC04` | mockup uses `#FBBC05` in most places and `#FABD03` in one grid; normalise to `#FBBC04` |
-| Google Green | `#34A853` | |
+| 1 (largest logo dot) | `system_accent1_600` | `system_accent1_200` |
+| 2 | `system_accent3_600` | `system_accent3_200` |
+| 3 | `system_accent2_600` | `system_accent2_200` |
+| 4 | `system_accent1_400` | `system_accent1_400` |
 
-Two near-duplicate variants appear in the export (`#4286F5`, `#EA4235`, `#FABD03`) — these are
-Figma rounding artefacts. Collapse them onto the four canonical values above.
+Exposed as `LocalBrandColors`; every component reads the list by index, so the ordering above is
+the contract. A Material You Karen therefore reads as **tonal** rather than four-colour — that is
+expected, not a bug.
+
+**Fallback palette.** The original Google brand colours, taken verbatim from the SVG fills, remain
+as the non-dynamic fallback (`KarenTheme(dynamicColor = false)`) and for previews:
+
+| Token | Hex |
+|---|---|
+| Google Blue | `#4285F4` |
+| Google Red | `#EA4335` |
+| Google Yellow | `#FBBC04` |
+| Google Green | `#34A853` |
+
+Near-duplicate variants in the export (`#4286F5`, `#EA4235`, `#FABD03`) are Figma rounding
+artefacts and collapse onto the four values above.
 
 ### 3.2 Surfaces
 
-| Token | Light | Dark |
-|---|---|---|
-| Sheet surface | `#FFFFFF` | `#1F1F1F` |
-| Bubble — assistant | `#FFFFFF` (elevated) | `#2D2F31` |
-| Bubble — user | `#F1F3F4` | `#3C4043` |
-| Text primary | `#202124` | `#E8EAED` |
-| Text secondary | `#5F6368` | `#9AA0A6` |
-| Scrim | `#000000 @ 55 %` | `#000000 @ 65 %` |
+Surfaces derive from the active `ColorScheme` so they follow the wallpaper too. The mapping:
 
-**Icon-grid backgrounds:** faint brand colour at **15 % opacity** behind a fully saturated glyph.
+| Token | Material 3 role |
+|---|---|
+| Sheet surface | `surface` |
+| Bubble — assistant | `surfaceContainerHigh` |
+| Bubble — user | `surfaceVariant` |
+| Card surface | `surfaceContainer` |
+| Action button | `surfaceContainerHighest` |
+| Text primary | `onSurface` |
+| Text secondary / action icon tint | `onSurfaceVariant` |
+| Scrim | `scrim` @ 55 % light, 65 % dark |
+
+**Icon-grid backgrounds:** the slot's accent at **15 % opacity** behind a fully saturated glyph.
+
+**Semantic exceptions**, which stay off the wallpaper palette by design:
+
+- End-call button — `error` / `onError`, because an end-call affordance must read as red.
+- Music provider avatars — Spotify, YouTube Music and Apple Music keep their own brand colours.
+- The extracted mic and Lens rasters are tinted flat (`primary` and `onSurfaceVariant`), which
+  deliberately discards their original four-colour Google artwork.
 
 ### 3.3 Typography
 

@@ -28,8 +28,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.mahasvan.karen.R
 import com.mahasvan.karen.assistant.AssistantState
+import androidx.compose.material3.MaterialTheme
 import com.mahasvan.karen.ui.theme.AssistantTheme
-import com.mahasvan.karen.ui.theme.GoogleBlue
 
 private val ButtonSize = 45.dp
 private val ButtonGap = 35.dp
@@ -56,7 +56,7 @@ fun BottomActionBar(
             Icon(
                 painter = painterResource(R.drawable.ic_google_lens),
                 contentDescription = "Google Lens",
-                tint = androidx.compose.ui.graphics.Color.Unspecified,
+                tint = AssistantTheme.palette.actionIconTint,
                 modifier = Modifier.size(24.dp),
             )
         }
@@ -81,7 +81,7 @@ fun BottomActionBar(
                     Icon(
                         painter = painterResource(R.drawable.ic_google_mic),
                         contentDescription = "Speak",
-                        tint = androidx.compose.ui.graphics.Color.Unspecified,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(width = 20.dp, height = 22.dp),
                     )
                 }
@@ -92,7 +92,7 @@ fun BottomActionBar(
             Icon(
                 imageVector = Icons.Outlined.Keyboard,
                 contentDescription = "Keyboard",
-                tint = GoogleBlue,
+                tint = AssistantTheme.palette.actionIconTint,
                 modifier = Modifier.size(24.dp),
             )
         }

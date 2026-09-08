@@ -23,7 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
-import com.mahasvan.karen.ui.theme.GoogleBrandColors
+import com.mahasvan.karen.ui.theme.AssistantTheme
 
 private val RestingSize = 16.dp
 private val ActiveWidth = 9.3.dp
@@ -47,12 +47,13 @@ fun VoiceVisualizer(
     scale: Float = 1f,
 ) {
     val transition = rememberInfiniteTransition(label = "voice")
+    val brandColors = AssistantTheme.brandColors
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy((DotPitch - RestingSize) * scale),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        GoogleBrandColors.forEachIndexed { index, color ->
+        brandColors.forEachIndexed { index, color ->
             val amplitude by transition.animateFloat(
                 initialValue = 0f,
                 targetValue = 1f,

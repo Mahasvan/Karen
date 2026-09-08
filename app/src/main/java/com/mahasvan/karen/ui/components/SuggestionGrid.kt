@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Alarm
@@ -30,10 +30,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.mahasvan.karen.ui.theme.AssistantTheme
-import com.mahasvan.karen.ui.theme.GoogleBlue
-import com.mahasvan.karen.ui.theme.GoogleGreen
-import com.mahasvan.karen.ui.theme.GoogleRed
-import com.mahasvan.karen.ui.theme.GoogleYellow
 
 private val CircleSize = 52.dp
 private val RowPitch = 77.dp
@@ -42,18 +38,17 @@ data class Suggestion(
     val label: String,
     val prompt: String,
     val icon: ImageVector,
-    val color: Color,
 )
 
 private val Suggestions = listOf(
-    Suggestion("Call", "call ABCXYZ", Icons.Outlined.Call, GoogleBlue),
-    Suggestion("Music", "play Bohemian Rhapsody", Icons.Outlined.MusicNote, GoogleRed),
-    Suggestion("Alarm", "set an alarm for 7 AM", Icons.Outlined.Alarm, GoogleYellow),
-    Suggestion("Weather", "what's the weather like", Icons.Outlined.WbSunny, GoogleGreen),
-    Suggestion("Navigate", "navigate home", Icons.Outlined.Navigation, GoogleBlue),
-    Suggestion("Translate", "translate hello to French", Icons.Outlined.Translate, GoogleRed),
-    Suggestion("Remind", "remind me to call mum", Icons.Outlined.Notifications, GoogleYellow),
-    Suggestion("Forecast", "will it rain tomorrow", Icons.Outlined.CloudQueue, GoogleGreen),
+    Suggestion("Call", "call ABCXYZ", Icons.Outlined.Call),
+    Suggestion("Music", "play Bohemian Rhapsody", Icons.Outlined.MusicNote),
+    Suggestion("Alarm", "set an alarm for 7 AM", Icons.Outlined.Alarm),
+    Suggestion("Weather", "what's the weather like", Icons.Outlined.WbSunny),
+    Suggestion("Navigate", "navigate home", Icons.Outlined.Navigation),
+    Suggestion("Translate", "translate hello to French", Icons.Outlined.Translate),
+    Suggestion("Remind", "remind me to call mum", Icons.Outlined.Notifications),
+    Suggestion("Forecast", "will it rain tomorrow", Icons.Outlined.CloudQueue),
 )
 
 /**
@@ -65,6 +60,7 @@ fun SuggestionGrid(
     onSuggestionClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val brandColors = AssistantTheme.brandColors
     LazyVerticalGrid(
         columns = GridCells.Fixed(4),
         modifier = modifier.height(RowPitch * 2),
@@ -72,14 +68,14 @@ fun SuggestionGrid(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         userScrollEnabled = false,
     ) {
-        items(Suggestions, key = { it.label }) { suggestion ->
-            SuggestionItem(suggestion, onSuggestionClick)
+        itemsIndexed(Suggestions, key = { _, item -> item.label }) { index, suggestion ->
+            SuggestionItem(suggestion, brandColors[index % brandColors.size], onSuggestionClick)
         }
     }
 }
 
 @Composable
-private fun SuggestionItem(suggestion: Suggestion, onClick: (String) -> Unit) {
+private fun SuggestionItem(suggestion: Suggestion, accent: Color, onClick: (String) -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -87,14 +83,14 @@ private fun SuggestionItem(suggestion: Suggestion, onClick: (String) -> Unit) {
         Box(
             modifier = Modifier
                 .size(CircleSize)
-                .background(suggestion.color.copy(alpha = 0.15f), CircleShape)
+                .background(accent.copy(alpha = 0.15f), CircleShape)
                 .clickable { onClick(suggestion.prompt) },
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = suggestion.icon,
                 contentDescription = suggestion.label,
-                tint = suggestion.color,
+                tint = accent,
                 modifier = Modifier.size(24.dp),
             )
         }

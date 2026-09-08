@@ -37,7 +37,6 @@ import androidx.compose.ui.unit.dp
 import com.mahasvan.karen.assistant.MusicProvider
 import com.mahasvan.karen.assistant.RichCard
 import com.mahasvan.karen.ui.theme.AssistantTheme
-import com.mahasvan.karen.ui.theme.GoogleRed
 
 private val CardShape = RoundedCornerShape(16.dp)
 
@@ -103,7 +102,7 @@ private fun CallingCard(card: RichCard.Calling, onEndCall: () -> Unit, modifier:
             Box(
                 modifier = Modifier
                     .size(63.dp)
-                    .background(GoogleRed, CircleShape)
+                    .background(MaterialTheme.colorScheme.error, CircleShape)
                     .clickable {
                         haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                         onEndCall()
@@ -113,7 +112,7 @@ private fun CallingCard(card: RichCard.Calling, onEndCall: () -> Unit, modifier:
                 Icon(
                     imageVector = Icons.Filled.CallEnd,
                     contentDescription = "End call",
-                    tint = Color.White,
+                    tint = MaterialTheme.colorScheme.onError,
                     modifier = Modifier.size(28.dp),
                 )
             }

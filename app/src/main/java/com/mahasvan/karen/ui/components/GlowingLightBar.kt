@@ -19,8 +19,8 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.mahasvan.karen.ui.theme.GoogleBrandColors
 import androidx.compose.ui.unit.lerp
+import com.mahasvan.karen.ui.theme.AssistantTheme
 
 private val GlowHeight = 28.dp
 private val MinBarHeight = 4.dp
@@ -33,6 +33,7 @@ private val MaxBarHeight = 10.dp
  */
 @Composable
 fun GlowingLightBar(modifier: Modifier = Modifier) {
+    val brandColors = AssistantTheme.brandColors
     val transition = rememberInfiniteTransition(label = "glow")
     val sweep by transition.animateFloat(
         initialValue = 0f,
@@ -53,7 +54,7 @@ fun GlowingLightBar(modifier: Modifier = Modifier) {
         label = "pulse",
     )
 
-    val tiled = GoogleBrandColors + GoogleBrandColors + GoogleBrandColors
+    val tiled = brandColors + brandColors + brandColors
     val brush = Brush.horizontalGradient(
         colors = tiled,
         startX = -sweep * 1000f,
@@ -67,7 +68,7 @@ fun GlowingLightBar(modifier: Modifier = Modifier) {
                 .height(GlowHeight)
                 .alpha(0.35f * (0.6f + 0.4f * pulse))
                 .background(
-                    Brush.verticalGradient(listOf(Color.Transparent, GoogleBrandColors[0]))
+                    Brush.verticalGradient(listOf(Color.Transparent, brandColors[0]))
                 )
         )
         Box(

@@ -1,8 +1,11 @@
 package com.mahasvan.karen.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -10,6 +13,8 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.colorResource
 
 @Immutable
 data class AssistantPalette(
@@ -24,35 +29,34 @@ data class AssistantPalette(
     val cardSurface: Color,
 )
 
-private val LightPalette = AssistantPalette(
-    sheetSurface = Color(0xFFFFFFFF),
-    userBubble = Color(0xFFF1F3F4),
-    assistantBubble = Color(0xFFFFFFFF),
-    textPrimary = Color(0xFF202124),
-    textSecondary = Color(0xFF5F6368),
-    scrim = Color(0x8C000000),
-    actionButton = Color(0xFFFFFFFF),
-    actionIconTint = Color(0xFF5F6368),
-    cardSurface = Color(0xFFF8F9FA),
+private fun ColorScheme.toAssistantPalette(darkTheme: Boolean) = AssistantPalette(
+    sheetSurface = surface,
+    userBubble = surfaceVariant,
+    assistantBubble = surfaceContainerHigh,
+    textPrimary = onSurface,
+    textSecondary = onSurfaceVariant,
+    scrim = scrim.copy(alpha = if (darkTheme) 0.65f else 0.55f),
+    actionButton = surfaceContainerHighest,
+    actionIconTint = onSurfaceVariant,
+    cardSurface = surfaceContainer,
 )
 
-private val DarkPalette = AssistantPalette(
-    sheetSurface = Color(0xFF1F1F1F),
-    userBubble = Color(0xFF3C4043),
-    assistantBubble = Color(0xFF2D2F31),
-    textPrimary = Color(0xFFE8EAED),
-    textSecondary = Color(0xFF9AA0A6),
-    scrim = Color(0xA6000000),
-    actionButton = Color(0xFF2D2F31),
-    actionIconTint = Color(0xFFE8EAED),
-    cardSurface = Color(0xFF2D2F31),
-)
+val LocalAssistantPalette = staticCompositionLocalOf {
+    lightColorScheme().toAssistantPalette(darkTheme = false)
+}
 
-val LocalAssistantPalette = staticCompositionLocalOf { LightPalette }
+/**
+ * The four accents driving the logo dots, the voice visualizer and the glow bar.
+ * Wallpaper-derived when dynamic colour is on, Google brand colours otherwise.
+ */
+val LocalBrandColors = staticCompositionLocalOf { GoogleBrandColors }
 
 object AssistantTheme {
     val palette: AssistantPalette
         @Composable @ReadOnlyComposable get() = LocalAssistantPalette.current
+
+    val brandColors: List<Color>
+        @Composable @ReadOnlyComposable get() = LocalBrandColors.current
 }
 
 private val DarkColorScheme = darkColorScheme(
@@ -67,16 +71,50 @@ private val LightColorScheme = lightColorScheme(
     tertiary = GoogleYellow,
 )
 
+/**
+ * Four distinguishable tones pulled from the wallpaper palette. The three accent families
+ * only yield three hues, so the fourth dot is a lighter tone of accent1 — which is why a
+ * Material You Karen reads as tonal rather than four-colour.
+ */
+@Composable
+private fun wallpaperBrandColors(darkTheme: Boolean): List<Color> = if (darkTheme) {
+    listOf(
+        colorResource(android.R.color.system_accent1_200),
+        colorResource(android.R.color.system_accent3_200),
+        colorResource(android.R.color.system_accent2_200),
+        colorResource(android.R.color.system_accent1_400),
+    )
+} else {
+    listOf(
+        colorResource(android.R.color.system_accent1_600),
+        colorResource(android.R.color.system_accent3_600),
+        colorResource(android.R.color.system_accent2_600),
+        colorResource(android.R.color.system_accent1_400),
+    )
+}
+
 @Composable
 fun KarenTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
+    dynamicColor: Boolean = true,
     content: @Composable () -> Unit,
 ) {
+    val context = LocalContext.current
+    val colorScheme = when {
+        dynamicColor && darkTheme -> dynamicDarkColorScheme(context)
+        dynamicColor -> dynamicLightColorScheme(context)
+        darkTheme -> DarkColorScheme
+        else -> LightColorScheme
+    }
+    val brandColors =
+        if (dynamicColor) wallpaperBrandColors(darkTheme) else GoogleBrandColors
+
     CompositionLocalProvider(
-        LocalAssistantPalette provides if (darkTheme) DarkPalette else LightPalette
+        LocalAssistantPalette provides colorScheme.toAssistantPalette(darkTheme),
+        LocalBrandColors provides brandColors,
     ) {
         MaterialTheme(
-            colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme,
+            colorScheme = colorScheme,
             typography = Typography,
             content = content,
         )
