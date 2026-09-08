@@ -11,6 +11,7 @@ import com.mahasvan.karen.tools.ToolCard
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -35,9 +36,6 @@ class AssistantViewModel(
     private var listenJob: Job? = null
     private var turnJob: Job? = null
 
-    /** The prompt behind the turn currently on screen, so [retry] can re-run it. */
-    private var lastQuery: String? = null
-
     fun toggleMicrophone() {
         if (_uiState.value.state == AssistantState.Listening) stopListening() else startListening()
     }
@@ -54,11 +52,15 @@ class AssistantViewModel(
         beginTurn(query)
     }
 
-    /** Re-runs the last prompt against the backend without duplicating it in the transcript. */
+    /**
+     * Re-runs the last prompt without duplicating it in the transcript. The backend owns
+     * the history and therefore owns the retry: it replays the prompt against the history
+     * as it stood before the failed turn.
+     */
     fun retry() {
-        val query = lastQuery ?: return
+        val replies = backend.retry() ?: return
         _uiState.update { it.copy(state = AssistantState.Processing, error = null) }
-        runTurn(query)
+        runTurn(replies)
     }
 
     /** Commits the card the user just confirmed to the relevant system app. */
@@ -87,7 +89,6 @@ class AssistantViewModel(
     }
 
     private fun beginTurn(query: String) {
-        lastQuery = query
         _uiState.update {
             it.copy(
                 state = AssistantState.Processing,
@@ -97,14 +98,14 @@ class AssistantViewModel(
                 conversation = it.conversation + ConversationItem.UserQuery(nextId++, query),
             )
         }
-        runTurn(query)
+        runTurn(backend.respond(query))
     }
 
-    private fun runTurn(query: String) {
+    private fun runTurn(replies: Flow<AssistantReply>) {
         turnJob?.cancel()
         turnJob = viewModelScope.launch {
             try {
-                backend.respond(query).collect { reply ->
+                replies.collect { reply ->
                     when (reply) {
                         is AssistantReply.Handoff -> _actions.send(reply.action)
                         is AssistantReply.Text -> appendOrUpdateText(reply)

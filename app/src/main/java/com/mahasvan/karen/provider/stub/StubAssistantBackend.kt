@@ -25,7 +25,29 @@ import kotlinx.coroutines.flow.flow
  */
 class StubAssistantBackend : AssistantBackend {
 
+    /**
+     * Committed turns, oldest first. Keyword matching never reads this; the list exists so
+     * the stub exercises the same stateful contract a real provider depends on, including
+     * commit-on-completion, instead of letting those paths go untested.
+     */
+    private val history = mutableListOf<HistoryEntry>()
+    private var lastPrompt: String? = null
+
     override fun respond(prompt: String): Flow<AssistantReply> = flow {
+        lastPrompt = prompt
+        val pending = mutableListOf<HistoryEntry>(HistoryEntry.User(prompt))
+        produceReplies(prompt).collect { reply ->
+            emit(reply)
+            pending += HistoryEntry.Reply(reply)
+        }
+        // Reached only on normal completion: a failed or cancelled turn leaves history
+        // exactly the way the retry that follows it needs.
+        history += pending
+    }
+
+    override fun retry(): Flow<AssistantReply>? = lastPrompt?.let { respond(it) }
+
+    private fun produceReplies(prompt: String): Flow<AssistantReply> = flow {
         delay(700)
         val text = prompt.lowercase()
         when {
@@ -126,6 +148,11 @@ class StubAssistantBackend : AssistantBackend {
         } else {
             emit(AssistantReply.Handoff(action))
         }
+    }
+
+    private sealed interface HistoryEntry {
+        data class User(val text: String) : HistoryEntry
+        data class Reply(val reply: AssistantReply) : HistoryEntry
     }
 
     private companion object {
