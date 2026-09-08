@@ -103,8 +103,6 @@ Surfaces derive from the active `ColorScheme` so they follow the wallpaper too. 
 
 **Semantic exceptions**, which stay off the wallpaper palette by design:
 
-- End-call button — `error` / `onError`, because an end-call affordance must read as red.
-- Music provider avatars — Spotify, YouTube Music and Apple Music keep their own brand colours.
 - The extracted mic and Lens rasters are tinted flat (`primary` and `onSurfaceVariant`), which
   deliberately discards their original four-colour Google artwork.
 
@@ -124,7 +122,7 @@ Surfaces derive from the active `ColorScheme` so they follow the wallpaper too. 
 ### 3.4 Shapes
 
 - Action chips, icon buttons, avatars, bubbles: `CircleShape`.
-- Rich cards (calling UI, music picker, alarm): `RoundedCornerShape(16.dp)`
+- Rich cards (alarm, timer, calendar event): `RoundedCornerShape(16.dp)`
   — the mockup uses `rx=25 px` ≈ `8.dp` for cards and `rx=20 px` for frames; `16.dp` is the
   modernised value.
 - Chat bubbles: fully rounded pill, with a reduced radius on the corner facing the speaker.
@@ -253,23 +251,47 @@ the brand colour at **15 % opacity** carrying a saturated glyph, with a `12 sp` 
 
 ### 4.8 Rich cards
 
-**Calling card** (Frame F, dark): `811 × 998 px` = **`270 × 333 dp`**, `rx = 25 px`, filled with a
-linear gradient. Contains:
+Karen supports **four** capabilities and nothing else: alarms, timers, calendar events, and
+placing a call. The mockup's calling and music-player cards are **not built** — see §4.9.
 
-- "Calling… ABCXYZ" title text
-- a 3 × 2 grid of `135 px` (**45 dp**) circular dialer actions at centres x = `349.5 / 549.5 / 749.5`
-  (dp `116 / 183 / 250`), rows at y = `679` and `909` px — pitch `200 px` (**66.7 dp**) horizontal,
-  `230 px` (**76.7 dp**) vertical. Actions: Mute, Keypad, Speaker, Add call, Hold, Record.
-- a prominent end-call button: circle `r = 94.5 px` = **31.5 dp** radius (63 dp diameter),
-  gradient-filled red, centred at x = 540 px (sheet centre).
+All three cards share one `ActionCard` shape rather than each being bespoke:
 
-**Music selector card** (Frame H): a vertical list of `621 × 139.8 px` = **`207 × 46.6 dp`** rows,
-`rx = 25 px`, each paired with a `141 × 141 px` (**47 dp**) circular provider avatar at x = 85 px
-(**28 dp**). Providers: Spotify, YouTube Music, Apple Music.
+| Slot | Value |
+|---|---|
+| Card shape | `RoundedCornerShape(16.dp)`, `ElevatedCard` on `cardSurface` |
+| Leading glyph | `40 dp` circle, accent @ 15 % opacity, `20 dp` icon |
+| Title | `titleMedium` on `textPrimary` |
+| Subtitle | `bodyMedium` on `textSecondary` |
+| Trailing | optional; only the alarm card uses it (a Material 3 `Switch`, per Frame J) |
+| Footer | right-aligned `TextButton` that hands off to the system app |
 
-**Alarm / toggle card** (Frame J): a `244 × 92 px` (**81 × 30.7 dp**) pill, `rx = 46`, containing a
-`89 × 89 px` (**~30 dp**) `#4285F4` knob — i.e. a Material 3 `Switch` trailing the alarm time.
-Also present: a `#34A853` circle `r = 66 px` (**22 dp**) call-accept affordance.
+| Card | Title | Subtitle | Footer |
+|---|---|---|---|
+| Alarm | `7:00 AM` | label | "Set in Clock" |
+| Timer | `10:00` | label | "Start in Clock" |
+| Calendar event | event title | `EEE d MMM, h:mm a` | "Add to Calendar" |
+
+The Frame J alarm pill (`244 × 92 px` = **81 × 30.7 dp**, `rx = 46`, with an `89 px` ≈ **30 dp**
+knob) is what the alarm card's trailing `Switch` corresponds to.
+
+### 4.9 Capabilities not built
+
+The mockup's **calling card** (Frame F: `270 × 333 dp`, dark gradient, 3 × 2 dialer grid, red
+end-call button) and **music selector card** (Frame H: provider rows with brand avatars) are
+deliberately **out of scope**.
+
+There is no in-app calling UI at all. A call request is a *handoff*: Karen emits an
+`AssistantAction.Dial` and the native dialer takes over — see §7.2.
+
+Also dropped from the suggestion grid: weather, navigation, translate, reminders and forecast.
+The grid is now **one row of four** (alarm, timer, event, call) rather than the mockup's 4 × 2.
+The grid's height is derived from the row count, so restoring items reflows it automatically.
+
+### 4.10 Assistant logo
+
+The 4-dot logo (§4.1, §4.2) is slated for removal. `AssistantAvatar` and `AssistantHeroLogo`
+remain in `ui/components/AssistantLogo.kt` and are still wired into the conversation stream and
+the idle sheet, but no further work should be invested in them.
 
 ---
 
@@ -282,7 +304,7 @@ Box (fills screen, transparent)
 ├── Scrim              — gradient, click-to-dismiss
 └── Column (align bottom, 50%–90% height, rounded top corners, surface)
     ├── DragHandle
-    ├── AppActionGrid          — LazyVerticalGrid, 4 columns  (§4.7)
+    ├── SuggestionGrid         — LazyVerticalGrid, 4 columns  (§4.7)
     ├── ConversationStream     — LazyColumn, weight(1f)       (§5.1)
     └── BottomActionBar        — fixed Row of 3 buttons        (§4.6)
 └── GlowingLightBar    — absolute bottom edge, Listening only  (§6.1)
@@ -294,7 +316,9 @@ Box (fills screen, transparent)
 - **Assistant response:** left-aligned. **Correction to the mockup:** modern Assistant renders
   response text directly on the surface *without* a bubble, preceded by the 4-dot avatar. The
   mockup's white assistant bubbles are dated — drop them.
-- **Rich cards:** rendered inline in the stream, full sheet width minus `20 dp` gutters.
+- **Rich cards:** rendered inline in the stream, inset by the `40 dp` avatar gutter so they line
+  up with the response text. Alarm, timer and calendar event only.
+- **Handoffs** produce no stream item of their own — just the spoken line that precedes them.
 
 ---
 
@@ -307,7 +331,7 @@ The Figma mockups are dated; these four additions are required for the clone to 
 On entering `Listening`, a glowing animated gradient bar appears at the **absolute bottom edge of
 the screen** — below the sheet, spanning full width.
 
-- `Box` with `Brush.horizontalGradient(Blue, Red, Yellow, Green)`
+- `Box` with `Brush.horizontalGradient` over the four `LocalBrandColors` accents
 - `infiniteRepeatable` animation on **alpha** (0.6 → 1.0) and **height** (4 dp → 10 dp) to
   simulate voice amplitude
 - gradient offset also animates horizontally for a travelling-glow effect
@@ -336,18 +360,48 @@ so they expand smoothly rather than snapping in.
 
 ## 7. AI Backend Boundary
 
-The assistant brain is **stubbed** for now and must sit behind a narrow interface so a LiteRT
+### 7.1 The interface
+
+The assistant brain is **stubbed** for now and sits behind a narrow interface so a LiteRT
 on-device backend can replace it without UI changes.
 
 ```kotlin
 interface AssistantBackend {
     fun respond(prompt: String): Flow<AssistantReply>
+    fun transcribe(): Flow<String>
 }
 ```
 
-- `StubAssistantBackend` returns canned replies (matching the mockup copy) with an artificial
-  delay so the `Processing` state is observable.
+- `StubAssistantBackend` is keyword matching, not language understanding — it is throwaway.
+  It delays before replying so the `Processing` state is observable, and `transcribe()` dribbles
+  out partial transcripts word by word so `Listening` is too.
 - The `ViewModel` depends only on `AssistantBackend`; swapping in `LiteRtAssistantBackend` is a
-  one-line construction change.
-- Replies are a sealed type so a reply can be plain text **or** a rich card payload
-  (calling / music / alarm), keeping card rendering data-driven.
+  one-line change in `AssistantViewModel.Factory`.
+- `AssistantReply` is a sealed type with three arms, keeping rendering data-driven:
+  `Text`, `Card` (alarm / timer / calendar event), and `Handoff`.
+
+### 7.2 Platform handoff
+
+Karen never rings an alarm or places a call itself. `AssistantAction` values travel from the
+ViewModel to the activity over a one-shot `Channel`, and `Context.perform(action)` turns each
+into a system intent:
+
+| Action | Intent | Notes |
+|---|---|---|
+| `Dial` | `ACTION_DIAL` (`tel:`) | **not** `ACTION_CALL` — needs no runtime permission and leaves the final press to the user |
+| `Dial` (name, not digits) | `ACTION_VIEW` on `Phone.CONTENT_FILTER_URI` | opens contacts filtered to the name; no `READ_CONTACTS` needed on our side |
+| `SetAlarm` | `AlarmClock.ACTION_SET_ALARM` | requires the normal `SET_ALARM` permission |
+| `StartTimer` | `AlarmClock.ACTION_SET_TIMER` | |
+| `CreateEvent` | `ACTION_INSERT` on `Events.CONTENT_URI` | no permission required |
+
+`EXTRA_SKIP_UI` is left `false` so the clock app always confirms with the user. Every launch is
+wrapped against `ActivityNotFoundException` and falls back to a toast.
+
+**Two different confirmation models**, deliberately:
+
+- **Dial** is emitted as a `Handoff` and fires *immediately* — no card, no confirmation step.
+- **Alarm / timer / event** render a card first; the intent only fires when the user taps the
+  card's footer button.
+
+The manifest declares `<queries>` for all four intents so the handoffs stay visible under
+package visibility filtering.

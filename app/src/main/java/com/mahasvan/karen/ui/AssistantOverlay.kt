@@ -47,7 +47,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.mahasvan.karen.assistant.AssistantState
 import com.mahasvan.karen.assistant.AssistantUiState
-import com.mahasvan.karen.assistant.MusicProvider
 import com.mahasvan.karen.ui.components.AssistantHeroLogo
 import com.mahasvan.karen.ui.components.BottomActionBar
 import com.mahasvan.karen.ui.components.ConversationStream
@@ -67,8 +66,7 @@ fun AssistantOverlay(
     onMicClick: () -> Unit,
     onKeyboardClick: () -> Unit,
     onSubmit: (String) -> Unit,
-    onEndCall: (Long) -> Unit,
-    onProviderSelected: (Long, MusicProvider) -> Unit,
+    onConfirmCard: (Long) -> Unit,
     onAlarmToggle: (Long, Boolean) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
@@ -129,8 +127,7 @@ fun AssistantOverlay(
                     ConversationStream(
                         conversation = uiState.conversation,
                         partialTranscript = uiState.partialTranscript,
-                        onEndCall = onEndCall,
-                        onProviderSelected = onProviderSelected,
+                        onConfirmCard = onConfirmCard,
                         onAlarmToggle = onAlarmToggle,
                         modifier = Modifier
                             .fillMaxWidth()

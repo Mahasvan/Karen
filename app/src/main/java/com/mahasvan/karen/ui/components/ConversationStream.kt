@@ -26,7 +26,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.mahasvan.karen.assistant.ConversationItem
-import com.mahasvan.karen.assistant.MusicProvider
 import com.mahasvan.karen.ui.theme.AssistantTheme
 
 private val BubbleShape = RoundedCornerShape(topStart = 19.dp, topEnd = 19.dp, bottomStart = 19.dp, bottomEnd = 4.dp)
@@ -36,8 +35,7 @@ private val AvatarGutter = 40.dp
 fun ConversationStream(
     conversation: List<ConversationItem>,
     partialTranscript: String,
-    onEndCall: (Long) -> Unit,
-    onProviderSelected: (Long, MusicProvider) -> Unit,
+    onConfirmCard: (Long) -> Unit,
     onAlarmToggle: (Long, Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -65,8 +63,7 @@ fun ConversationStream(
                     ) {
                         RichCardContent(
                             card = item.card,
-                            onEndCall = { onEndCall(item.id) },
-                            onProviderSelected = { onProviderSelected(item.id, it) },
+                            onConfirm = { onConfirmCard(item.id) },
                             onAlarmToggle = { onAlarmToggle(item.id, it) },
                             modifier = Modifier.padding(start = AvatarGutter),
                         )

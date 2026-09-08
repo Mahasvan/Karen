@@ -14,12 +14,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Alarm
 import androidx.compose.material.icons.outlined.Call
-import androidx.compose.material.icons.outlined.CloudQueue
-import androidx.compose.material.icons.outlined.MusicNote
-import androidx.compose.material.icons.outlined.Navigation
-import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.material.icons.outlined.Translate
-import androidx.compose.material.icons.outlined.WbSunny
+import androidx.compose.material.icons.outlined.Event
+import androidx.compose.material.icons.outlined.HourglassEmpty
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -41,19 +37,16 @@ data class Suggestion(
 )
 
 private val Suggestions = listOf(
-    Suggestion("Call", "call ABCXYZ", Icons.Outlined.Call),
-    Suggestion("Music", "play Bohemian Rhapsody", Icons.Outlined.MusicNote),
-    Suggestion("Alarm", "set an alarm for 7 AM", Icons.Outlined.Alarm),
-    Suggestion("Weather", "what's the weather like", Icons.Outlined.WbSunny),
-    Suggestion("Navigate", "navigate home", Icons.Outlined.Navigation),
-    Suggestion("Translate", "translate hello to French", Icons.Outlined.Translate),
-    Suggestion("Remind", "remind me to call mum", Icons.Outlined.Notifications),
-    Suggestion("Forecast", "will it rain tomorrow", Icons.Outlined.CloudQueue),
+    Suggestion("Alarm", "set an alarm for 7 am", Icons.Outlined.Alarm),
+    Suggestion("Timer", "set a timer for 10 minutes", Icons.Outlined.HourglassEmpty),
+    Suggestion("Event", "schedule a meeting with the design team", Icons.Outlined.Event),
+    Suggestion("Call", "call 555 0134", Icons.Outlined.Call),
 )
 
 /**
- * The 4x2 launcher grid from the mockup. Scrolling is disabled and the height is fixed
- * to exactly two rows, because this sits above a LazyColumn in the same Column.
+ * The launcher grid from the mockup, now one row wide since Karen only supports four
+ * things. Scrolling is disabled and the height is pinned to the row count, because this
+ * sits above a LazyColumn in the same Column.
  */
 @Composable
 fun SuggestionGrid(
@@ -63,7 +56,7 @@ fun SuggestionGrid(
     val brandColors = AssistantTheme.brandColors
     LazyVerticalGrid(
         columns = GridCells.Fixed(4),
-        modifier = modifier.height(RowPitch * 2),
+        modifier = modifier.height(RowPitch * ((Suggestions.size + 3) / 4)),
         verticalArrangement = Arrangement.spacedBy(RowPitch - CircleSize - 18.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         userScrollEnabled = false,

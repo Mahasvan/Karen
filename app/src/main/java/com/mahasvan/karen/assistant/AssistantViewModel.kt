@@ -5,9 +5,11 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -17,6 +19,11 @@ class AssistantViewModel(
 
     private val _uiState = MutableStateFlow(AssistantUiState())
     val uiState: StateFlow<AssistantUiState> = _uiState.asStateFlow()
+
+    private val _actions = Channel<AssistantAction>(Channel.BUFFERED)
+
+    /** Consumed once by the activity, which turns each action into a system intent. */
+    val actions = _actions.receiveAsFlow()
 
     private var nextId = 0L
     private var listenJob: Job? = null
@@ -43,16 +50,31 @@ class AssistantViewModel(
         }
         viewModelScope.launch {
             backend.respond(query).collect { reply ->
-                _uiState.update { state ->
-                    val item = when (reply) {
-                        is AssistantReply.Text -> ConversationItem.AssistantText(nextId++, reply.text)
-                        is AssistantReply.Card -> ConversationItem.AssistantCard(nextId++, reply.card)
-                    }
-                    state.copy(conversation = state.conversation + item)
+                when (reply) {
+                    is AssistantReply.Handoff -> _actions.send(reply.action)
+                    is AssistantReply.Text -> append(ConversationItem.AssistantText(nextId++, reply.text))
+                    is AssistantReply.Card -> append(ConversationItem.AssistantCard(nextId++, reply.card))
                 }
             }
             _uiState.update { it.copy(state = AssistantState.DisplayingResult) }
         }
+    }
+
+    /** Commits the card the user just confirmed to the relevant system app. */
+    fun confirmCard(id: Long) {
+        val card = (_uiState.value.conversation
+            .firstOrNull { it.id == id } as? ConversationItem.AssistantCard)?.card ?: return
+        val action = when (card) {
+            is RichCard.Alarm ->
+                AssistantAction.SetAlarm(card.hour, card.minute, card.label)
+
+            is RichCard.Timer ->
+                AssistantAction.StartTimer(card.totalSeconds, card.label)
+
+            is RichCard.CalendarEvent ->
+                AssistantAction.CreateEvent(card.title, card.startMillis, card.endMillis)
+        }
+        viewModelScope.launch { _actions.send(action) }
     }
 
     fun setAlarmEnabled(id: Long, enabled: Boolean) {
@@ -71,10 +93,8 @@ class AssistantViewModel(
         }
     }
 
-    fun dismissCard(id: Long) {
-        _uiState.update { state ->
-            state.copy(conversation = state.conversation.filterNot { it.id == id })
-        }
+    private fun append(item: ConversationItem) {
+        _uiState.update { it.copy(conversation = it.conversation + item) }
     }
 
     private fun startListening() {

@@ -1,7 +1,6 @@
 package com.mahasvan.karen.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,239 +11,142 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.VolumeUp
-import androidx.compose.material.icons.filled.CallEnd
-import androidx.compose.material.icons.outlined.Dialpad
-import androidx.compose.material.icons.outlined.FiberManualRecord
-import androidx.compose.material.icons.outlined.MicOff
-import androidx.compose.material.icons.outlined.Pause
-import androidx.compose.material.icons.outlined.PersonAdd
+import androidx.compose.material.icons.outlined.Alarm
+import androidx.compose.material.icons.outlined.Event
+import androidx.compose.material.icons.outlined.HourglassEmpty
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.mahasvan.karen.assistant.MusicProvider
 import com.mahasvan.karen.assistant.RichCard
+import com.mahasvan.karen.assistant.formatClock
+import com.mahasvan.karen.assistant.formatDuration
 import com.mahasvan.karen.ui.theme.AssistantTheme
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 private val CardShape = RoundedCornerShape(16.dp)
+private val EventFormat = SimpleDateFormat("EEE d MMM, h:mm a", Locale.getDefault())
 
 @Composable
 fun RichCardContent(
     card: RichCard,
-    onEndCall: () -> Unit,
-    onProviderSelected: (MusicProvider) -> Unit,
+    onConfirm: () -> Unit,
     onAlarmToggle: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     when (card) {
-        is RichCard.Calling -> CallingCard(card, onEndCall, modifier)
-        is RichCard.MusicPicker -> MusicPickerCard(card, onProviderSelected, modifier)
-        is RichCard.Alarm -> AlarmCard(card, onAlarmToggle, modifier)
-    }
-}
+        is RichCard.Alarm -> ActionCard(
+            icon = Icons.Outlined.Alarm,
+            title = formatClock(card.hour, card.minute),
+            subtitle = card.label,
+            confirmLabel = "Set in Clock",
+            onConfirm = onConfirm,
+            modifier = modifier,
+            trailing = {
+                Switch(checked = card.enabled, onCheckedChange = onAlarmToggle)
+            },
+        )
 
-private val DialerActions = listOf(
-    "Mute" to Icons.Outlined.MicOff,
-    "Keypad" to Icons.Outlined.Dialpad,
-    "Speaker" to Icons.AutoMirrored.Outlined.VolumeUp,
-    "Add call" to Icons.Outlined.PersonAdd,
-    "Hold" to Icons.Outlined.Pause,
-    "Record" to Icons.Outlined.FiberManualRecord,
-)
+        is RichCard.Timer -> ActionCard(
+            icon = Icons.Outlined.HourglassEmpty,
+            title = formatDuration(card.totalSeconds),
+            subtitle = card.label,
+            confirmLabel = "Start in Clock",
+            onConfirm = onConfirm,
+            modifier = modifier,
+        )
 
-@Composable
-private fun CallingCard(card: RichCard.Calling, onEndCall: () -> Unit, modifier: Modifier) {
-    val haptics = LocalHapticFeedback.current
-    ElevatedCard(shape = CardShape, modifier = modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier
-                .background(
-                    Brush.verticalGradient(listOf(Color(0xFF303134), Color(0xFF1F1F1F)))
-                )
-                .padding(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(20.dp),
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = "Calling\u2026",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFF9AA0A6),
-                )
-                Text(
-                    text = card.contact,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Medium,
-                    color = Color(0xFFE8EAED),
-                )
-            }
-
-            DialerActions.chunked(3).forEach { row ->
-                Row(horizontalArrangement = Arrangement.spacedBy(22.dp)) {
-                    row.forEach { (label, icon) ->
-                        DialerAction(label, icon)
-                    }
-                }
-            }
-
-            Box(
-                modifier = Modifier
-                    .size(63.dp)
-                    .background(MaterialTheme.colorScheme.error, CircleShape)
-                    .clickable {
-                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                        onEndCall()
-                    },
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.CallEnd,
-                    contentDescription = "End call",
-                    tint = MaterialTheme.colorScheme.onError,
-                    modifier = Modifier.size(28.dp),
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun DialerAction(label: String, icon: ImageVector) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        Box(
-            modifier = Modifier
-                .size(45.dp)
-                .background(Color(0xFF3C4043), CircleShape),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = label,
-                tint = Color(0xFFE8EAED),
-                modifier = Modifier.size(20.dp),
-            )
-        }
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = Color(0xFF9AA0A6),
+        is RichCard.CalendarEvent -> ActionCard(
+            icon = Icons.Outlined.Event,
+            title = card.title,
+            subtitle = EventFormat.format(Date(card.startMillis)),
+            confirmLabel = "Add to Calendar",
+            onConfirm = onConfirm,
+            modifier = modifier,
         )
     }
 }
 
-private val ProviderColors = mapOf(
-    MusicProvider.Spotify to Color(0xFF1DB954),
-    MusicProvider.YouTubeMusic to Color(0xFFFF0000),
-    MusicProvider.AppleMusic to Color(0xFFFA243C),
-)
-
+/**
+ * One shape for all three cards: leading glyph, title over subtitle, optional trailing
+ * control, and a footer button that hands the card off to the relevant system app.
+ */
 @Composable
-private fun MusicPickerCard(
-    card: RichCard.MusicPicker,
-    onProviderSelected: (MusicProvider) -> Unit,
-    modifier: Modifier,
+private fun ActionCard(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    confirmLabel: String,
+    onConfirm: () -> Unit,
+    modifier: Modifier = Modifier,
+    trailing: @Composable (() -> Unit)? = null,
 ) {
     val haptics = LocalHapticFeedback.current
     val palette = AssistantTheme.palette
+    val accent = AssistantTheme.brandColors.first()
+
     ElevatedCard(shape = CardShape, modifier = modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier
-                .background(palette.cardSurface)
-                .padding(vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            card.providers.forEach { provider ->
-                Row(
+        Column(modifier = Modifier.background(palette.cardSurface)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                            onProviderSelected(provider)
-                        }
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        .size(40.dp)
+                        .background(accent.copy(alpha = 0.15f), CircleShape),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(47.dp)
-                            .background(ProviderColors.getValue(provider), CircleShape),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = provider.displayName.take(1),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = Color.White,
-                        )
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = accent,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = palette.textPrimary,
+                    )
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = palette.textSecondary,
+                    )
+                }
+                trailing?.invoke()
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                TextButton(
+                    onClick = {
+                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onConfirm()
                     }
-                    Column {
-                        Text(
-                            text = provider.displayName,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = palette.textPrimary,
-                        )
-                        Text(
-                            text = card.track,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = palette.textSecondary,
-                        )
-                    }
+                ) {
+                    Text(confirmLabel)
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun AlarmCard(
-    card: RichCard.Alarm,
-    onToggle: (Boolean) -> Unit,
-    modifier: Modifier,
-) {
-    val haptics = LocalHapticFeedback.current
-    val palette = AssistantTheme.palette
-    ElevatedCard(shape = CardShape, modifier = modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier
-                .background(palette.cardSurface)
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Column {
-                Text(
-                    text = card.time,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = palette.textPrimary,
-                )
-                Text(
-                    text = card.label,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = palette.textSecondary,
-                )
-            }
-            Switch(
-                checked = card.enabled,
-                onCheckedChange = {
-                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                    onToggle(it)
-                },
-            )
         }
     }
 }

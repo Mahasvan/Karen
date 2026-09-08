@@ -2,22 +2,56 @@ package com.mahasvan.karen.assistant
 
 import androidx.compose.runtime.Immutable
 
+/**
+ * The four things Karen can do. Anything else is answered with a spoken refusal rather
+ * than a card.
+ */
 @Immutable
 sealed interface RichCard {
     @Immutable
-    data class Calling(val contact: String) : RichCard
+    data class Alarm(
+        val label: String,
+        val hour: Int,
+        val minute: Int,
+        val enabled: Boolean,
+    ) : RichCard
 
     @Immutable
-    data class MusicPicker(val track: String, val providers: List<MusicProvider>) : RichCard
+    data class Timer(
+        val label: String,
+        val totalSeconds: Int,
+    ) : RichCard
 
     @Immutable
-    data class Alarm(val label: String, val time: String, val enabled: Boolean) : RichCard
+    data class CalendarEvent(
+        val title: String,
+        val startMillis: Long,
+        val endMillis: Long,
+    ) : RichCard
 }
 
-enum class MusicProvider(val displayName: String) {
-    Spotify("Spotify"),
-    YouTubeMusic("YouTube Music"),
-    AppleMusic("Apple Music"),
+/**
+ * Work that has to leave the app. Karen builds the intent and the platform owns whatever
+ * happens next, so there is no in-app calling or clock UI to maintain.
+ */
+@Immutable
+sealed interface AssistantAction {
+    /** [query] is either a dialable number or a contact name to look up. */
+    @Immutable
+    data class Dial(val query: String) : AssistantAction
+
+    @Immutable
+    data class SetAlarm(val hour: Int, val minute: Int, val label: String) : AssistantAction
+
+    @Immutable
+    data class StartTimer(val seconds: Int, val label: String) : AssistantAction
+
+    @Immutable
+    data class CreateEvent(
+        val title: String,
+        val startMillis: Long,
+        val endMillis: Long,
+    ) : AssistantAction
 }
 
 @Immutable
@@ -27,6 +61,10 @@ sealed interface AssistantReply {
 
     @Immutable
     data class Card(val card: RichCard) : AssistantReply
+
+    /** Handed straight to the platform without waiting for the user to confirm. */
+    @Immutable
+    data class Handoff(val action: AssistantAction) : AssistantReply
 }
 
 @Immutable
