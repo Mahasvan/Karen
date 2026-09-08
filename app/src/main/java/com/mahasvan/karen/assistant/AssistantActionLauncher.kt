@@ -8,6 +8,7 @@ import android.provider.AlarmClock
 import android.provider.CalendarContract
 import android.provider.ContactsContract
 import android.widget.Toast
+import com.mahasvan.karen.R
 
 /**
  * Turns an [AssistantAction] into a system intent. Karen never places a call or rings an
@@ -15,6 +16,9 @@ import android.widget.Toast
  *
  * Dialling uses ACTION_DIAL rather than ACTION_CALL on purpose: it needs no runtime
  * permission and leaves the final press to the user.
+ *
+ * Every intent here is implicit and built from our own data. Karen never receives an intent
+ * from another app and never forwards one, so there is no redirection surface to guard.
  */
 fun Context.perform(action: AssistantAction) {
     val intent = when (action) {
@@ -41,10 +45,12 @@ fun Context.perform(action: AssistantAction) {
         }
     }
 
+    // No FLAG_ACTIVITY_NEW_TASK: the caller is the Activity, so the target belongs in Karen's
+    // task and Back returns here rather than stranding the user in a detached task.
     try {
-        startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        startActivity(intent)
     } catch (_: ActivityNotFoundException) {
-        Toast.makeText(this, "No app available to handle that", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, R.string.error_no_handler_app, Toast.LENGTH_SHORT).show()
     }
 }
 

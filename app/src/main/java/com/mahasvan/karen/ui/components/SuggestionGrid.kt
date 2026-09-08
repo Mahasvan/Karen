@@ -22,25 +22,44 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.annotation.StringRes
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.mahasvan.karen.R
 import com.mahasvan.karen.ui.theme.AssistantTheme
 
 private val CircleSize = 52.dp
 private val RowPitch = 77.dp
 
 data class Suggestion(
-    val label: String,
-    val prompt: String,
+    @param:StringRes val label: Int,
+    @param:StringRes val prompt: Int,
     val icon: ImageVector,
 )
 
 private val Suggestions = listOf(
-    Suggestion("Alarm", "set an alarm for 7 am", Icons.Outlined.Alarm),
-    Suggestion("Timer", "set a timer for 10 minutes", Icons.Outlined.HourglassEmpty),
-    Suggestion("Event", "schedule a meeting with the design team", Icons.Outlined.Event),
-    Suggestion("Call", "call 555 0134", Icons.Outlined.Call),
+    Suggestion(
+        R.string.suggestion_alarm_label,
+        R.string.suggestion_alarm_prompt,
+        Icons.Outlined.Alarm,
+    ),
+    Suggestion(
+        R.string.suggestion_timer_label,
+        R.string.suggestion_timer_prompt,
+        Icons.Outlined.HourglassEmpty,
+    ),
+    Suggestion(
+        R.string.suggestion_event_label,
+        R.string.suggestion_event_prompt,
+        Icons.Outlined.Event,
+    ),
+    Suggestion(
+        R.string.suggestion_call_label,
+        R.string.suggestion_call_prompt,
+        Icons.Outlined.Call,
+    ),
 )
 
 /**
@@ -73,22 +92,24 @@ private fun SuggestionItem(suggestion: Suggestion, accent: Color, onClick: (Stri
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
+        val prompt = stringResource(suggestion.prompt)
+        val label = stringResource(suggestion.label)
         Box(
             modifier = Modifier
                 .size(CircleSize)
                 .background(accent.copy(alpha = 0.15f), CircleShape)
-                .clickable { onClick(suggestion.prompt) },
+                .clickable { onClick(prompt) },
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = suggestion.icon,
-                contentDescription = suggestion.label,
+                contentDescription = label,
                 tint = accent,
                 modifier = Modifier.size(24.dp),
             )
         }
         Text(
-            text = suggestion.label,
+            text = label,
             style = androidx.compose.material3.MaterialTheme.typography.labelMedium,
             color = AssistantTheme.palette.textSecondary,
             textAlign = TextAlign.Center,

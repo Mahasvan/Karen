@@ -1,3 +1,33 @@
 <resources>
     <string name="app_name">Karen</string>
+
+    <!-- Bottom action bar -->
+    <string name="action_lens">Google Lens</string>
+    <string name="action_speak">Speak</string>
+    <string name="action_keyboard">Keyboard</string>
+    <string name="action_send">Send</string>
+    <string name="input_placeholder">Ask Karen</string>
+    <string name="overlay_dismiss">Dismiss Karen</string>
+
+    <!-- Rich card confirmation buttons -->
+    <string name="card_confirm_alarm">Set in Clock</string>
+    <string name="card_confirm_timer">Start in Clock</string>
+    <string name="card_confirm_event">Add to Calendar</string>
+
+    <!-- Suggestion grid. The prompts are phrased as the user would speak them. -->
+    <string name="suggestion_alarm_label">Alarm</string>
+    <string name="suggestion_alarm_prompt">set an alarm for 7 am</string>
+    <string name="suggestion_timer_label">Timer</string>
+    <string name="suggestion_timer_prompt">set a timer for 10 minutes</string>
+    <string name="suggestion_event_label">Event</string>
+    <string name="suggestion_event_prompt">schedule a meeting with the design team</string>
+    <string name="suggestion_call_label">Call</string>
+    <string name="suggestion_call_prompt">call 555 0134</string>
+
+    <!-- Errors -->
+    <string name="error_no_handler_app">No app available to handle that</string>
+    <string name="error_network">Karen couldn\'t reach the assistant. Check your connection.</string>
+    <string name="error_model_unavailable">Karen\'s assistant model isn\'t available right now.</string>
+    <string name="error_unknown">Something went wrong.</string>
+    <string name="error_retry">Try again</string>
 </resources>

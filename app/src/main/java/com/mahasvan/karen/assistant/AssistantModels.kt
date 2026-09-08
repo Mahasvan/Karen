@@ -1,70 +1,26 @@
 package com.mahasvan.karen.assistant
 
 import androidx.compose.runtime.Immutable
-
-/**
- * The four things Karen can do. Anything else is answered with a spoken refusal rather
- * than a card.
- */
-@Immutable
-sealed interface RichCard {
-    @Immutable
-    data class Alarm(
-        val label: String,
-        val hour: Int,
-        val minute: Int,
-        val enabled: Boolean,
-    ) : RichCard
-
-    @Immutable
-    data class Timer(
-        val label: String,
-        val totalSeconds: Int,
-    ) : RichCard
-
-    @Immutable
-    data class CalendarEvent(
-        val title: String,
-        val startMillis: Long,
-        val endMillis: Long,
-    ) : RichCard
-}
-
-/**
- * Work that has to leave the app. Karen builds the intent and the platform owns whatever
- * happens next, so there is no in-app calling or clock UI to maintain.
- */
-@Immutable
-sealed interface AssistantAction {
-    /** [query] is either a dialable number or a contact name to look up. */
-    @Immutable
-    data class Dial(val query: String) : AssistantAction
-
-    @Immutable
-    data class SetAlarm(val hour: Int, val minute: Int, val label: String) : AssistantAction
-
-    @Immutable
-    data class StartTimer(val seconds: Int, val label: String) : AssistantAction
-
-    @Immutable
-    data class CreateEvent(
-        val title: String,
-        val startMillis: Long,
-        val endMillis: Long,
-    ) : AssistantAction
-}
+import com.mahasvan.karen.tools.ToolAction
+import com.mahasvan.karen.tools.ToolCard
 
 @Immutable
 sealed interface AssistantReply {
+
+    /**
+     * A message from the assistant. A backend that streams tokens should emit one [Text] per
+     * message and reuse the same [id] for every update to it, so the UI grows a single bubble
+     * instead of one bubble per token. Backends that reply in one shot can leave [id] null.
+     */
     @Immutable
-    data class Text(val text: String) : AssistantReply
+    data class Text(val text: String, val id: String? = null) : AssistantReply
 
     @Immutable
-    data class Card(val card: RichCard) : AssistantReply
+    data class Card(val card: ToolCard) : AssistantReply
 
     /** Handed straight to the platform without waiting for the user to confirm. */
     @Immutable
-    data class Handoff(val action: AssistantAction) : AssistantReply
+    data class Handoff(val action: ToolAction) : AssistantReply
 }
 
 @Immutable
@@ -74,14 +30,49 @@ sealed interface ConversationItem {
     @Immutable
     data class UserQuery(override val id: Long, val text: String) : ConversationItem
 
+    /** [streamId] carries [AssistantReply.Text.id] so later deltas can find this item again. */
     @Immutable
-    data class AssistantText(override val id: Long, val text: String) : ConversationItem
+    data class AssistantText(
+        override val id: Long,
+        val text: String,
+        val streamId: String? = null,
+    ) : ConversationItem
 
     @Immutable
-    data class AssistantCard(override val id: Long, val card: RichCard) : ConversationItem
+    data class AssistantCard(override val id: Long, val card: ToolCard) : ConversationItem
 }
 
-enum class AssistantState { Idle, Listening, Processing, DisplayingResult }
+/**
+ * Why a turn failed, in terms the UI can act on rather than in terms of whichever backend
+ * produced it. Each provider maps its own failures onto these: a remote OpenAI-compatible
+ * endpoint yields [Network] for a dropped connection and [ModelUnavailable] for a 404 on the
+ * model name, while an on-device LiteRT backend yields [ModelUnavailable] when weights are
+ * missing. The UI only branches on [recoverable].
+ */
+@Immutable
+sealed interface AssistantError {
+    /** Whether retrying the same prompt could plausibly succeed. */
+    val recoverable: Boolean
+
+    /** Transport failed. Remote providers only; retrying is usually worth it. */
+    @Immutable
+    data object Network : AssistantError {
+        override val recoverable: Boolean get() = true
+    }
+
+    /** The model could not be loaded or resolved. Retrying the same prompt will not help. */
+    @Immutable
+    data class ModelUnavailable(val detail: String?) : AssistantError {
+        override val recoverable: Boolean get() = false
+    }
+
+    @Immutable
+    data class Unknown(val detail: String?) : AssistantError {
+        override val recoverable: Boolean get() = true
+    }
+}
+
+enum class AssistantState { Idle, Listening, Processing, DisplayingResult, Error }
 
 @Immutable
 data class AssistantUiState(
@@ -89,6 +80,8 @@ data class AssistantUiState(
     val conversation: List<ConversationItem> = emptyList(),
     val partialTranscript: String = "",
     val keyboardOpen: Boolean = false,
+    /** Non-null exactly when [state] is [AssistantState.Error]. */
+    val error: AssistantError? = null,
 ) {
-    val showSuggestionGrid: Boolean get() = conversation.isEmpty()
+    val showSuggestionGrid: Boolean get() = conversation.isEmpty() && error == null
 }

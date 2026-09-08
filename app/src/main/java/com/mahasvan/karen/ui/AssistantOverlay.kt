@@ -12,6 +12,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
@@ -21,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,6 +32,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -44,7 +47,10 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.mahasvan.karen.R
+import com.mahasvan.karen.assistant.AssistantError
 import com.mahasvan.karen.assistant.AssistantState
 import com.mahasvan.karen.assistant.AssistantUiState
 import com.mahasvan.karen.ui.components.AssistantHeroLogo
@@ -57,8 +63,17 @@ import com.mahasvan.karen.ui.theme.AssistantTheme
 private val SheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
 
 /**
+ * Past this width the sheet stops spanning the window and centres instead, so it stays
+ * thumb-sized on tablets and unfolded foldables rather than becoming a full-width slab.
+ */
+private val SheetMaxWidth = 560.dp
+
+/** Below this height the window is short enough (landscape phone) to need a taller sheet. */
+private val ShortWindowHeight = 480.dp
+
+/**
  * The whole screen is transparent; only the bottom slice is occupied. The sheet grows
- * from half height to a 90% cap once the conversation has content to show.
+ * from its resting fraction to a near-full cap once the conversation has content to show.
  */
 @Composable
 fun AssistantOverlay(
@@ -68,17 +83,25 @@ fun AssistantOverlay(
     onSubmit: (String) -> Unit,
     onConfirmCard: (Long) -> Unit,
     onAlarmToggle: (Long, Boolean) -> Unit,
+    onRetry: () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val palette = AssistantTheme.palette
-    val sheetFraction by animateFloatAsState(
-        targetValue = if (uiState.conversation.isEmpty()) 0.5f else 0.9f,
-        animationSpec = tween(320, easing = FastOutSlowInEasing),
-        label = "sheetFraction",
-    )
 
-    Box(modifier = modifier.fillMaxSize()) {
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        // A landscape phone has so little height that the mockup's half-screen sheet leaves
+        // nothing usable, so the resting sheet takes proportionally more of a short window.
+        val shortWindow = maxHeight < ShortWindowHeight
+        val restingFraction = if (shortWindow) 0.72f else 0.5f
+        val grownFraction = if (shortWindow) 0.95f else 0.9f
+
+        val sheetFraction by animateFloatAsState(
+            targetValue = if (uiState.conversation.isEmpty()) restingFraction else grownFraction,
+            animationSpec = tween(320, easing = FastOutSlowInEasing),
+            label = "sheetFraction",
+        )
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -92,6 +115,7 @@ fun AssistantOverlay(
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
+                    onClickLabel = stringResource(R.string.overlay_dismiss),
                     onClick = onDismiss,
                 )
         )
@@ -107,6 +131,7 @@ fun AssistantOverlay(
         ) {
             Column(
                 modifier = Modifier
+                    .widthIn(max = SheetMaxWidth)
                     .fillMaxWidth()
                     .fillMaxHeight(sheetFraction)
                     .background(palette.sheetSurface, SheetShape)
@@ -135,6 +160,10 @@ fun AssistantOverlay(
                     )
                 }
 
+                uiState.error?.let { error ->
+                    ErrorRow(error = error, onRetry = onRetry)
+                }
+
                 if (uiState.keyboardOpen) {
                     TextInputRow(onSubmit = onSubmit)
                 }
@@ -144,7 +173,9 @@ fun AssistantOverlay(
                     onLensClick = {},
                     onMicClick = onMicClick,
                     onKeyboardClick = onKeyboardClick,
-                    modifier = Modifier.padding(bottom = 31.dp, top = 8.dp),
+                    // Bottom spacing comes from the navigationBars inset on the parent Column;
+                    // adding a fixed inset here as well double-pads on gesture-nav devices.
+                    modifier = Modifier.padding(top = 8.dp, bottom = 8.dp),
                 )
             }
         }
@@ -158,6 +189,36 @@ fun AssistantOverlay(
             GlowingLightBar()
         }
     }
+}
+
+@Composable
+private fun ErrorRow(error: AssistantError, onRetry: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = error.message(),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.error,
+            modifier = Modifier.weight(1f),
+        )
+        if (error.recoverable) {
+            TextButton(onClick = onRetry) {
+                Text(stringResource(R.string.error_retry))
+            }
+        }
+    }
+}
+
+@Composable
+private fun AssistantError.message(): String = when (this) {
+    AssistantError.Network -> stringResource(R.string.error_network)
+    is AssistantError.ModelUnavailable -> stringResource(R.string.error_model_unavailable)
+    is AssistantError.Unknown -> stringResource(R.string.error_unknown)
 }
 
 @Composable
@@ -191,7 +252,7 @@ private fun TextInputRow(onSubmit: (String) -> Unit) {
                 .focusRequester(focusRequester),
             placeholder = {
                 Text(
-                    text = "Ask Karen",
+                    text = stringResource(R.string.input_placeholder),
                     style = MaterialTheme.typography.bodyLarge,
                     color = AssistantTheme.palette.textSecondary,
                 )
@@ -211,7 +272,7 @@ private fun TextInputRow(onSubmit: (String) -> Unit) {
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.Send,
-                contentDescription = "Send",
+                contentDescription = stringResource(R.string.action_send),
                 tint = MaterialTheme.colorScheme.primary,
             )
         }

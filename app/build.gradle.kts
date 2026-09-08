@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -11,7 +13,9 @@ android {
 
     defaultConfig {
         applicationId = "com.mahasvan.karen"
-        minSdk = 36
+        // 31 is the floor for dynamic colour and the system_accent* resources, which is the
+        // only platform feature the UI actually depends on.
+        minSdk = 31
         targetSdk = 37
         versionCode = 1
         versionName = "1.0"
@@ -22,16 +26,23 @@ android {
     buildTypes {
         release {
             optimization {
-                enable = false
+                // Keep rules live in src/main/keepRules/*.keep.
+                enable = true
             }
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     buildFeatures {
         compose = true
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = JvmTarget.JVM_17
     }
 }
 

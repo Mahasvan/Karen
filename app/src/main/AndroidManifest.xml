@@ -19,6 +19,11 @@
             <action android:name="android.intent.action.INSERT" />
             <data android:mimeType="vnd.android.cursor.dir/event" />
         </intent>
+        <!-- The contact-name branch of the Dial action opens the contacts app filtered by name. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:mimeType="vnd.android.cursor.dir/phone_v2" />
+        </intent>
     </queries>
 
     <application

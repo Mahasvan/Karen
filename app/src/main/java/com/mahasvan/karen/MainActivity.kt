@@ -36,6 +36,7 @@ class MainActivity : ComponentActivity() {
                     onSubmit = viewModel::submit,
                     onConfirmCard = viewModel::confirmCard,
                     onAlarmToggle = viewModel::setAlarmEnabled,
+                    onRetry = viewModel::retry,
                     onDismiss = { finish() },
                 )
             }

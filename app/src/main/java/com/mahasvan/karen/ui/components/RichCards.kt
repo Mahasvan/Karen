@@ -26,7 +26,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.mahasvan.karen.R
 import com.mahasvan.karen.assistant.RichCard
 import com.mahasvan.karen.assistant.formatClock
 import com.mahasvan.karen.assistant.formatDuration
@@ -50,7 +52,7 @@ fun RichCardContent(
             icon = Icons.Outlined.Alarm,
             title = formatClock(card.hour, card.minute),
             subtitle = card.label,
-            confirmLabel = "Set in Clock",
+            confirmLabel = stringResource(R.string.card_confirm_alarm),
             onConfirm = onConfirm,
             modifier = modifier,
             trailing = {
@@ -62,7 +64,7 @@ fun RichCardContent(
             icon = Icons.Outlined.HourglassEmpty,
             title = formatDuration(card.totalSeconds),
             subtitle = card.label,
-            confirmLabel = "Start in Clock",
+            confirmLabel = stringResource(R.string.card_confirm_timer),
             onConfirm = onConfirm,
             modifier = modifier,
         )
@@ -71,7 +73,7 @@ fun RichCardContent(
             icon = Icons.Outlined.Event,
             title = card.title,
             subtitle = EventFormat.format(Date(card.startMillis)),
-            confirmLabel = "Add to Calendar",
+            confirmLabel = stringResource(R.string.card_confirm_event),
             onConfirm = onConfirm,
             modifier = modifier,
         )

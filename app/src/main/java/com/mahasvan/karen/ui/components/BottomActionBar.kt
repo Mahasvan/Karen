@@ -25,6 +25,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.mahasvan.karen.R
 import com.mahasvan.karen.assistant.AssistantState
@@ -55,7 +56,7 @@ fun BottomActionBar(
         ActionButton(onClick = onLensClick) {
             Icon(
                 painter = painterResource(R.drawable.ic_google_lens),
-                contentDescription = "Google Lens",
+                contentDescription = stringResource(R.string.action_lens),
                 tint = AssistantTheme.palette.actionIconTint,
                 modifier = Modifier.size(24.dp),
             )
@@ -80,7 +81,7 @@ fun BottomActionBar(
                 } else {
                     Icon(
                         painter = painterResource(R.drawable.ic_google_mic),
-                        contentDescription = "Speak",
+                        contentDescription = stringResource(R.string.action_speak),
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(width = 20.dp, height = 22.dp),
                     )
@@ -91,7 +92,7 @@ fun BottomActionBar(
         ActionButton(onClick = onKeyboardClick) {
             Icon(
                 imageVector = Icons.Outlined.Keyboard,
-                contentDescription = "Keyboard",
+                contentDescription = stringResource(R.string.action_keyboard),
                 tint = AssistantTheme.palette.actionIconTint,
                 modifier = Modifier.size(24.dp),
             )
