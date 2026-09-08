@@ -4,13 +4,11 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.mahasvan.karen.assistant.AssistantViewModel
+import com.mahasvan.karen.ui.AssistantOverlay
 import com.mahasvan.karen.ui.theme.KarenTheme
 
 class MainActivity : ComponentActivity() {
@@ -19,29 +17,21 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             KarenTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+                val viewModel: AssistantViewModel =
+                    viewModel(factory = AssistantViewModel.Factory)
+                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+                AssistantOverlay(
+                    uiState = uiState,
+                    onMicClick = viewModel::toggleMicrophone,
+                    onKeyboardClick = viewModel::toggleKeyboard,
+                    onSubmit = viewModel::submit,
+                    onEndCall = viewModel::dismissCard,
+                    onProviderSelected = { id, _ -> viewModel.dismissCard(id) },
+                    onAlarmToggle = viewModel::setAlarmEnabled,
+                    onDismiss = { finish() },
+                )
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    KarenTheme {
-        Greeting("Android")
     }
 }

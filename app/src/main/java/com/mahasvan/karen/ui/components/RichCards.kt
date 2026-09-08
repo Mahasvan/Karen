@@ -12,13 +12,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.VolumeUp
 import androidx.compose.material.icons.filled.CallEnd
 import androidx.compose.material.icons.outlined.Dialpad
 import androidx.compose.material.icons.outlined.FiberManualRecord
 import androidx.compose.material.icons.outlined.MicOff
 import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material.icons.outlined.PersonAdd
-import androidx.compose.material.icons.outlined.VolumeUp
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -59,7 +59,7 @@ fun RichCardContent(
 private val DialerActions = listOf(
     "Mute" to Icons.Outlined.MicOff,
     "Keypad" to Icons.Outlined.Dialpad,
-    "Speaker" to Icons.Outlined.VolumeUp,
+    "Speaker" to Icons.AutoMirrored.Outlined.VolumeUp,
     "Add call" to Icons.Outlined.PersonAdd,
     "Hold" to Icons.Outlined.Pause,
     "Record" to Icons.Outlined.FiberManualRecord,
