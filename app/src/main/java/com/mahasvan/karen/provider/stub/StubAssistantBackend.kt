@@ -1,14 +1,27 @@
-package com.mahasvan.karen.assistant
+package com.mahasvan.karen.provider.stub
 
+import com.mahasvan.karen.assistant.AssistantBackend
+import com.mahasvan.karen.assistant.AssistantReply
+import com.mahasvan.karen.tools.ToolRegistry
+import com.mahasvan.karen.tools.calendar.CALENDAR_EVENT_TOOL
+import com.mahasvan.karen.tools.clock.ALARM_TOOL
+import com.mahasvan.karen.tools.clock.TIMER_TOOL
+import com.mahasvan.karen.tools.clock.formatClock
+import com.mahasvan.karen.tools.clock.formatDuration
+import com.mahasvan.karen.tools.telephony.CALL_TOOL
 import java.util.Calendar
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.flow
 
 /**
- * Keyword matching standing in for real language understanding. Everything here is
- * throwaway: a LiteRT backend replaces the whole class and only has to keep producing
- * [AssistantReply] values.
+ * Keyword matching standing in for real language understanding.
+ *
+ * The keywords play the role of a model's function call: each branch picks a tool name and
+ * builds the arguments map, then hands both to [ToolRegistry] exactly as a real backend
+ * would. Everything up to the [route] call is throwaway; everything from it on is the shape
+ * a LiteRT or OpenAI-compatible backend keeps.
  */
 class StubAssistantBackend : AssistantBackend {
 
@@ -30,23 +43,22 @@ class StubAssistantBackend : AssistantBackend {
         }
     }
 
-    private suspend fun kotlinx.coroutines.flow.FlowCollector<AssistantReply>.emitDial(text: String) {
+    private suspend fun FlowCollector<AssistantReply>.emitDial(text: String) {
         val digits = DIGITS.find(text)?.value
         val target = digits ?: text
             .substringAfter("call", "")
             .substringAfter("dial", "")
             .removePrefix(" to ")
             .trim()
-            .ifBlank { "" }
         if (target.isBlank()) {
             emit(AssistantReply.Text("Who would you like to call?"))
             return
         }
         emit(AssistantReply.Text("Opening your dialer for $target"))
-        emit(AssistantReply.Handoff(AssistantAction.Dial(target)))
+        route(CALL_TOOL, mapOf("target" to target))
     }
 
-    private suspend fun kotlinx.coroutines.flow.FlowCollector<AssistantReply>.emitTimer(text: String) {
+    private suspend fun FlowCollector<AssistantReply>.emitTimer(text: String) {
         val match = DURATION.find(text)
         val amount = match?.groupValues?.get(1)?.toIntOrNull() ?: 5
         val seconds = when (match?.groupValues?.get(2)?.take(1)) {
@@ -55,10 +67,10 @@ class StubAssistantBackend : AssistantBackend {
             else -> amount * 60
         }
         emit(AssistantReply.Text("Timer for ${formatDuration(seconds)}"))
-        emit(AssistantReply.Card(RichCard.Timer(label = "Timer", totalSeconds = seconds)))
+        route(TIMER_TOOL, mapOf("seconds" to seconds.toString(), "label" to "Timer"))
     }
 
-    private suspend fun kotlinx.coroutines.flow.FlowCollector<AssistantReply>.emitAlarm(text: String) {
+    private suspend fun FlowCollector<AssistantReply>.emitAlarm(text: String) {
         val match = CLOCK_TIME.find(text)
         var hour = match?.groupValues?.get(1)?.toIntOrNull() ?: 7
         val minute = match?.groupValues?.get(2)?.toIntOrNull() ?: 0
@@ -66,14 +78,17 @@ class StubAssistantBackend : AssistantBackend {
         if (meridiem == "pm" && hour < 12) hour += 12
         if (meridiem == "am" && hour == 12) hour = 0
         emit(AssistantReply.Text("Alarm for ${formatClock(hour, minute)}"))
-        emit(
-            AssistantReply.Card(
-                RichCard.Alarm(label = "Alarm", hour = hour, minute = minute, enabled = true)
+        route(
+            ALARM_TOOL,
+            mapOf(
+                "hour" to hour.toString(),
+                "minute" to minute.toString(),
+                "label" to "Alarm",
             )
         )
     }
 
-    private suspend fun kotlinx.coroutines.flow.FlowCollector<AssistantReply>.emitEvent(prompt: String) {
+    private suspend fun FlowCollector<AssistantReply>.emitEvent(prompt: String) {
         val title = prompt
             .replace(EVENT_PREFIX, "")
             .trim()
@@ -85,61 +100,42 @@ class StubAssistantBackend : AssistantBackend {
             set(Calendar.SECOND, 0)
         }.timeInMillis
         emit(AssistantReply.Text("Here's the event"))
-        emit(
-            AssistantReply.Card(
-                RichCard.CalendarEvent(
-                    title = title,
-                    startMillis = start,
-                    endMillis = start + 3_600_000L,
-                )
+        route(
+            CALENDAR_EVENT_TOOL,
+            mapOf(
+                "title" to title,
+                "start_millis" to start.toString(),
+                "end_millis" to (start + ONE_HOUR_MILLIS).toString(),
             )
         )
     }
 
-    override fun transcribe(): Flow<String> = flow {
-        val utterance = STUB_UTTERANCES.random()
-        val spoken = StringBuilder()
-        utterance.split(" ").forEach { word ->
-            delay(260)
-            if (spoken.isNotEmpty()) spoken.append(' ')
-            spoken.append(word)
-            emit(spoken.toString())
+    /**
+     * The half of this class a real backend keeps: look the tool up, parse the arguments,
+     * then emit whichever reply the tool wants — a confirmation card, or a straight handoff.
+     */
+    private suspend fun FlowCollector<AssistantReply>.route(
+        toolName: String,
+        arguments: Map<String, String>,
+    ) {
+        val tool = ToolRegistry.tool(toolName) ?: return
+        val action = tool.parse(arguments) ?: return
+        val card = tool.card(action)
+        if (card != null) {
+            emit(AssistantReply.Card(card))
+        } else {
+            emit(AssistantReply.Handoff(action))
         }
-        delay(400)
     }
 
     private companion object {
+        const val ONE_HOUR_MILLIS = 3_600_000L
+
         val DIGITS = Regex("""[+\d][\d\s\-]{5,}""")
         val DURATION = Regex("""(\d+)\s*(hour|hr|minute|min|second|sec)""")
         val CLOCK_TIME = Regex("""(\d{1,2})(?::(\d{2}))?\s*(am|pm)?""")
         val EVENT_PREFIX = Regex(
             """(?i)\b(schedule|add|create|set up|put)\b|\b(a |an |the )?(meeting|event|reminder)\b|\bto my calendar\b|\bcalendar\b|\bremind me to\b"""
         )
-
-        val STUB_UTTERANCES = listOf(
-            "set an alarm for 7 am",
-            "set a timer for 10 minutes",
-            "schedule a meeting with the design team",
-            "call 555 0134",
-        )
-    }
-}
-
-fun formatClock(hour: Int, minute: Int): String {
-    val suffix = if (hour < 12) "AM" else "PM"
-    val display = when {
-        hour % 12 == 0 -> 12
-        else -> hour % 12
-    }
-    return "%d:%02d %s".format(display, minute, suffix)
-}
-
-fun formatDuration(totalSeconds: Int): String {
-    val hours = totalSeconds / 3600
-    val minutes = (totalSeconds % 3600) / 60
-    val seconds = totalSeconds % 60
-    return when {
-        hours > 0 -> "%d:%02d:%02d".format(hours, minutes, seconds)
-        else -> "%d:%02d".format(minutes, seconds)
     }
 }

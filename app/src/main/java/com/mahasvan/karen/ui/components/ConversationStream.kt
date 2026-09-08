@@ -26,6 +26,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.mahasvan.karen.assistant.ConversationItem
+import com.mahasvan.karen.tools.ToolCard
+import com.mahasvan.karen.tools.ToolRegistry
 import com.mahasvan.karen.ui.theme.AssistantTheme
 
 private val BubbleShape = RoundedCornerShape(topStart = 19.dp, topEnd = 19.dp, bottomStart = 19.dp, bottomEnd = 4.dp)
@@ -36,7 +38,7 @@ fun ConversationStream(
     conversation: List<ConversationItem>,
     partialTranscript: String,
     onConfirmCard: (Long) -> Unit,
-    onAlarmToggle: (Long, Boolean) -> Unit,
+    onUpdateCard: (Long, ToolCard) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val listState = rememberLazyListState()
@@ -61,12 +63,15 @@ fun ConversationStream(
                         visible = visible.value,
                         enter = expandVertically() + fadeIn(),
                     ) {
-                        RichCardContent(
-                            card = item.card,
-                            onConfirm = { onConfirmCard(item.id) },
-                            onAlarmToggle = { onAlarmToggle(item.id, it) },
-                            modifier = Modifier.padding(start = AvatarGutter),
-                        )
+                        // The registry lookup is the single dispatch point: the card names its
+                        // tool, the tool renders its own card. A new tool needs no change here.
+                        Box(modifier = Modifier.padding(start = AvatarGutter)) {
+                            ToolRegistry.tool(item.card)?.CardContent(
+                                card = item.card,
+                                onConfirm = { onConfirmCard(item.id) },
+                                onUpdate = { onUpdateCard(item.id, it) },
+                            )
+                        }
                     }
                 }
             }

@@ -53,6 +53,7 @@ import com.mahasvan.karen.R
 import com.mahasvan.karen.assistant.AssistantError
 import com.mahasvan.karen.assistant.AssistantState
 import com.mahasvan.karen.assistant.AssistantUiState
+import com.mahasvan.karen.tools.ToolCard
 import com.mahasvan.karen.ui.components.AssistantHeroLogo
 import com.mahasvan.karen.ui.components.BottomActionBar
 import com.mahasvan.karen.ui.components.ConversationStream
@@ -82,7 +83,7 @@ fun AssistantOverlay(
     onKeyboardClick: () -> Unit,
     onSubmit: (String) -> Unit,
     onConfirmCard: (Long) -> Unit,
-    onAlarmToggle: (Long, Boolean) -> Unit,
+    onUpdateCard: (Long, ToolCard) -> Unit,
     onRetry: () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
@@ -153,7 +154,7 @@ fun AssistantOverlay(
                         conversation = uiState.conversation,
                         partialTranscript = uiState.partialTranscript,
                         onConfirmCard = onConfirmCard,
-                        onAlarmToggle = onAlarmToggle,
+                        onUpdateCard = onUpdateCard,
                         modifier = Modifier
                             .fillMaxWidth()
                             .weight(1f),

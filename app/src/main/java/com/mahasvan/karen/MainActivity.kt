@@ -10,7 +10,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mahasvan.karen.assistant.AssistantViewModel
-import com.mahasvan.karen.assistant.perform
+import com.mahasvan.karen.tools.perform
 import com.mahasvan.karen.ui.AssistantOverlay
 import com.mahasvan.karen.ui.theme.KarenTheme
 
@@ -35,7 +35,7 @@ class MainActivity : ComponentActivity() {
                     onKeyboardClick = viewModel::toggleKeyboard,
                     onSubmit = viewModel::submit,
                     onConfirmCard = viewModel::confirmCard,
-                    onAlarmToggle = viewModel::setAlarmEnabled,
+                    onUpdateCard = viewModel::updateCard,
                     onRetry = viewModel::retry,
                     onDismiss = { finish() },
                 )
