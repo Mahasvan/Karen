@@ -55,6 +55,7 @@ object TimerTool : Tool {
             icon = Icons.Outlined.HourglassEmpty,
             title = formatDuration(timer.totalSeconds),
             header = "Timer Started",
+            subtitle = timer.label
         )
     }
 }
