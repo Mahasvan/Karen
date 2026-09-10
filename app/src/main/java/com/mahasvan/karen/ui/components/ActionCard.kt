@@ -1,6 +1,8 @@
 package com.mahasvan.karen.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,6 +27,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.rememberScrollState
 import com.mahasvan.karen.ui.theme.AppTheme
 import com.mahasvan.karen.ui.theme.AssistantTheme
 
@@ -87,8 +90,11 @@ fun ActionCard(
                     text = title,
                     style = MaterialTheme.typography.displayMedium,
                     color = palette.textPrimary,
-
-                    )
+                    maxLines = 1,
+                    modifier = Modifier
+                        .horizontalScroll(rememberScrollState())
+                        .basicMarquee(),
+                )
                 if (!subtitle.isNullOrEmpty()) {
                     Text(
                         text = subtitle,
