@@ -105,13 +105,24 @@ class TensorAssistantBackend(
         conversation!!
             .sendMessageAsync(Message.user(prompt))
             .collect { message ->
-                accumulated.append(message.text())
+                val text = message.text()
+                if (text.isEmpty()) return@collect
+                accumulated.append(text)
                 emit(AssistantReply.Text(accumulated.toString(), id = responseId))
             }
         // Drain any cards the tools produced during this turn.
+        var cardEmitted = false
         while (true) {
             val card = pendingCards.poll() ?: break
             emit(AssistantReply.Card(card))
+            cardEmitted = true
+        }
+
+        // The model doesn't advertise function calling (functionCalling=false), so it
+        // sometimes emits a tool call with no surrounding text. sendMessageAsync's flow
+        // emits only model text, so such a turn produces nothing visible.
+        if (accumulated.isEmpty() && !cardEmitted) {
+            emit(AssistantReply.Text("I didn't catch that. Could you rephrase?", id = responseId))
         }
     }.flowOn(Dispatchers.IO)
 
