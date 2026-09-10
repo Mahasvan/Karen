@@ -71,7 +71,7 @@ private fun Message.text(): String =
 class TensorAssistantBackend(
     private val context: Context,
     private val modelFile: File,
-    private val maxNumTokens: Int = 1024,
+    private val maxNumTokens: Int = 4096,
 ) : AssistantBackend {
 
     private var conversation: Conversation? = null
