@@ -32,12 +32,12 @@ object CalendarEventTool : Tool {
         ToolParameter("title", "Title of the event.", required = true),
         ToolParameter(
             "start_time",
-            "Start time in the format YYYY-MM-DDTHH:MM:SS.",
-            required = true
+            "Start time in the format YYYY-MM-DDTHH:MM:SS. Defaults to current time if not specified.",
+            required = false
         ),
         ToolParameter(
             "end_time",
-            "End time in the format YYYY-MM-DDTHH:MM:SS. Use start time plus one hour if not specified.",
+            "End time in the format YYYY-MM-DDTHH:MM:SS. Defaults to start time plus one hour if not specified.",
             required = false
         ),
     )
@@ -45,8 +45,9 @@ object CalendarEventTool : Tool {
     override fun execute(context: Context, arguments: Map<String, String>): ToolResult {
         val title = arguments["title"]?.trim()?.takeIf { it.isNotEmpty() }
             ?: return ToolResult(false, "Invalid title")
-        val start = parseDateTime(arguments["start_time"])
-            ?: return ToolResult(false, "Invalid start time. Use format YYYY-MM-DDTHH:MM:SS")
+        val start = arguments["start_time"]?.trim()?.takeIf { it.isNotEmpty() }
+            ?.let { parseDateTime(it) }
+            ?: System.currentTimeMillis()
         val end = arguments["end_time"]?.trim()?.takeIf { it.isNotEmpty() }
             ?.let { parseDateTime(it) }
             ?: (start + ONE_HOUR_MILLIS)
