@@ -14,6 +14,7 @@ import com.mahasvan.karen.tools.ToolParameter
 import com.mahasvan.karen.tools.ToolResult
 import com.mahasvan.karen.ui.components.ActionCard
 import java.time.Instant
+import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
@@ -30,13 +31,13 @@ object CalendarEventTool : Tool {
     override val parameters = listOf(
         ToolParameter("title", "Title of the event.", required = true),
         ToolParameter(
-            "start_millis",
-            "Start time as a Unix epoch timestamp in milliseconds.",
+            "start_time",
+            "Start time in the format YYYY-MM-DDTHH:MM:SS.",
             required = true
         ),
         ToolParameter(
-            "end_millis",
-            "End time in milliseconds. Defaults to one hour after the start.",
+            "end_time",
+            "End time in the format YYYY-MM-DDTHH:MM:SS. Use start time plus one hour if not specified.",
             required = false
         ),
     )
@@ -44,9 +45,11 @@ object CalendarEventTool : Tool {
     override fun execute(context: Context, arguments: Map<String, String>): ToolResult {
         val title = arguments["title"]?.trim()?.takeIf { it.isNotEmpty() }
             ?: return ToolResult(false, "Invalid title")
-        val start = arguments["start_millis"]?.toLongOrNull()
-            ?: return ToolResult(false, "Invalid start time")
-        val end = arguments["end_millis"]?.toLongOrNull() ?: (start + ONE_HOUR_MILLIS)
+        val start = parseDateTime(arguments["start_time"])
+            ?: return ToolResult(false, "Invalid start time. Use format YYYY-MM-DDTHH:MM:SS")
+        val end = arguments["end_time"]?.trim()?.takeIf { it.isNotEmpty() }
+            ?.let { parseDateTime(it) }
+            ?: (start + ONE_HOUR_MILLIS)
         if (end < start) return ToolResult(false, "End time is before start time")
         return try {
             context.startActivity(
@@ -83,6 +86,15 @@ private fun formatEventStart(startMillis: Long): String =
     DateTimeFormatter.ofPattern("EEE d MMM, h:mm a")
         .withZone(ZoneId.systemDefault())
         .format(Instant.ofEpochMilli(startMillis))
+
+private fun parseDateTime(value: String?): Long? = value?.let {
+    runCatching {
+        LocalDateTime.parse(it)
+            .atZone(ZoneId.systemDefault())
+            .toInstant()
+            .toEpochMilli()
+    }.getOrNull()
+}
 
 @Immutable
 data class CalendarEventCard(
