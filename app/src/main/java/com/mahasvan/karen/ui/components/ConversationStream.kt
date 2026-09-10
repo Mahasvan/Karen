@@ -30,7 +30,6 @@ import com.mahasvan.karen.tools.ToolRegistry
 import com.mahasvan.karen.ui.theme.AssistantTheme
 
 private val BubbleShape = RoundedCornerShape(topStart = 19.dp, topEnd = 19.dp, bottomStart = 19.dp, bottomEnd = 4.dp)
-private val AvatarGutter = 40.dp
 
 @Composable
 fun ConversationStream(
@@ -63,7 +62,12 @@ fun ConversationStream(
                     ) {
                         // The registry lookup is the single dispatch point: the card names its
                         // tool, the tool renders its own card. A new tool needs no change here.
-                        Box(modifier = Modifier.padding(start = AvatarGutter)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.Top,
+                        ) {
+                            AssistantAvatar()
                             ToolRegistry.tool(item.card)?.CardContent(card = item.card)
                         }
                     }

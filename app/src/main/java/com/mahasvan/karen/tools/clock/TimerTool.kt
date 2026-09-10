@@ -54,7 +54,7 @@ object TimerTool : Tool {
         ActionCard(
             icon = Icons.Outlined.HourglassEmpty,
             title = formatDuration(timer.totalSeconds),
-            subtitle = timer.label,
+            header = "Timer Started",
         )
     }
 }

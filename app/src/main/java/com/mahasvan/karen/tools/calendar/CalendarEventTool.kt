@@ -61,6 +61,7 @@ object CalendarEventTool : Tool {
         ActionCard(
             icon = Icons.Outlined.Event,
             title = event.title,
+            header = "Added to Calendar",
             subtitle = formatEventStart(event.startMillis),
         )
     }

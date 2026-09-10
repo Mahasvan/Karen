@@ -55,6 +55,7 @@ object AlarmTool : Tool {
         ActionCard(
             icon = Icons.Outlined.Alarm,
             title = formatClock(alarm.hour, alarm.minute),
+            header = "Alarm Set",
             subtitle = alarm.label,
         )
     }
