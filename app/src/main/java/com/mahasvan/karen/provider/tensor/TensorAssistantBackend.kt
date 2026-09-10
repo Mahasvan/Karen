@@ -293,7 +293,7 @@ class TensorAssistantBackend(
         return Contents.of(
             "You are a helpful, concise assistant. Additionally, you have capabilities that can control the device's clock, " +
                     "calendar, and dialer through function calls.\n" +
-                    "Current date and time: ${now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))} " +
+                    "Current date and time: ${now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"))} " +
                     "(${now.format(DateTimeFormatter.ofPattern("EEEE"))}).\n" +
                     "You can use the provided tools when the user asks to set alarms, start timers, " +
                     "create calendar events, or place calls. " +
@@ -361,14 +361,14 @@ class TensorAssistantBackend(
         @Tool(description = "Add an event to the user's calendar.")
         fun createCalendarEvent(
             @ToolParam(description = "Title of the event.") title: String,
-            @ToolParam(description = "Start time as a Unix epoch timestamp in milliseconds.") startMillis: String,
-            @ToolParam(description = "End time in milliseconds. Use start + 3600000 if not specified.") endMillis: String,
+            @ToolParam(description = "Start time in the format YYYY-MM-DDTHH:MM:SS.") startTime: String,
+            @ToolParam(description = "End time in the format YYYY-MM-DDTHH:MM:SS. Use start time plus one hour if not specified.") endTime: String,
         ): Map<String, String> = execute(
             CALENDAR_EVENT_TOOL,
             mapOf(
                 "title" to title,
-                "start_millis" to startMillis,
-                "end_millis" to endMillis,
+                "start_time" to startTime,
+                "end_time" to endTime,
             ),
         )
 
