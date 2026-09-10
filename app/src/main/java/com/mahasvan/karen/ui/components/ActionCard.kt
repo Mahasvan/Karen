@@ -1,6 +1,5 @@
 package com.mahasvan.karen.ui.components
 
-import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -89,7 +88,7 @@ fun ActionCard(
                     style = MaterialTheme.typography.displayMedium,
                     color = palette.textPrimary,
 
-                )
+                    )
                 if (!subtitle.isNullOrEmpty()) {
                     Text(
                         text = subtitle,

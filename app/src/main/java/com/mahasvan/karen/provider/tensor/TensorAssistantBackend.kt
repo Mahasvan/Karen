@@ -28,14 +28,14 @@ import com.mahasvan.karen.tools.calendar.CALENDAR_EVENT_TOOL
 import com.mahasvan.karen.tools.clock.ALARM_TOOL
 import com.mahasvan.karen.tools.clock.TIMER_TOOL
 import com.mahasvan.karen.tools.telephony.CALL_TOOL
-import java.io.File
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import java.util.concurrent.ConcurrentLinkedQueue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import java.io.File
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.concurrent.ConcurrentLinkedQueue
 
 private const val TAG = "TensorAssistantBackend"
 
@@ -127,7 +127,7 @@ class TensorAssistantBackend(
         if (!modelFile.exists()) {
             throw ModelUnavailableException(
                 "Model file not found. Place gemma-4-E2B-it_Google_Tensor_G5.litertlm in " +
-                    "${modelFile.parentFile?.absolutePath} and try again.",
+                        "${modelFile.parentFile?.absolutePath} and try again.",
             )
         }
 
@@ -170,7 +170,7 @@ class TensorAssistantBackend(
         } catch (e: Exception) {
             throw ModelUnavailableException(
                 "Could not start the on-device model: ${e.message ?: e.javaClass.simpleName}. " +
-                    "Check logcat (tag: litert) for dispatch backend or TPU errors.",
+                        "Check logcat (tag: litert) for dispatch backend or TPU errors.",
                 e,
             )
         }
@@ -188,16 +188,16 @@ class TensorAssistantBackend(
                 Log.i(
                     TAG,
                     "Model capabilities: speculativeDecoding=" +
-                        "${capabilities.hasSpeculativeDecodingSupport()}, " +
-                        "thinking=${capabilities.supportsThinking()}, " +
-                        "functionCalling=${capabilities.supportsFunctionCalling()}, " +
-                        "modalities=${capabilities.inputModalities()}",
+                            "${capabilities.hasSpeculativeDecodingSupport()}, " +
+                            "thinking=${capabilities.supportsThinking()}, " +
+                            "functionCalling=${capabilities.supportsFunctionCalling()}, " +
+                            "modalities=${capabilities.inputModalities()}",
                 )
                 if (!capabilities.supportsFunctionCalling()) {
                     Log.w(
                         TAG,
                         "Model does not advertise function calling; tools may be " +
-                            "ignored or hallucinated rather than invoked.",
+                                "ignored or hallucinated rather than invoked.",
                     )
                 }
                 capabilities.hasSpeculativeDecodingSupport()
@@ -218,18 +218,18 @@ class TensorAssistantBackend(
         val now = LocalDateTime.now()
         return Contents.of(
             "You are a helpful, concise assistant that can control the device's clock, " +
-                "calendar, and dialer through function calls.\n" +
-                "Current date and time: ${now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))} " +
-                "(${now.format(DateTimeFormatter.ofPattern("EEEE"))}).\n" +
-                "Use the provided tools when the user asks to set alarms, start timers, " +
-                "create calendar events, or place calls. " +
-                "Android's clock API is write-only: you cannot list existing alarms or " +
-                "timers. Never invent alarms or timers you did not set.\n" +
-                "For sensitive actions like placing a call, confirm with the user first " +
-                "(e.g. \"Should I call 555-0134?\") and wait for their reply before " +
-                "calling the tool. For non-sensitive actions like setting alarms, " +
-                "starting timers, and creating calendar events, call the tool directly " +
-                "without asking."
+                    "calendar, and dialer through function calls.\n" +
+                    "Current date and time: ${now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))} " +
+                    "(${now.format(DateTimeFormatter.ofPattern("EEEE"))}).\n" +
+                    "Use the provided tools when the user asks to set alarms, start timers, " +
+                    "create calendar events, or place calls. " +
+                    "Android's clock API is write-only: you cannot list existing alarms or " +
+                    "timers. Never invent alarms or timers you did not set.\n" +
+                    "For sensitive actions like placing a call, confirm with the user first " +
+                    "(e.g. \"Should I call 555-0134?\") and wait for their reply before " +
+                    "calling the tool. For non-sensitive actions like setting alarms, " +
+                    "starting timers, and creating calendar events, call the tool directly " +
+                    "without asking."
         )
     }
 

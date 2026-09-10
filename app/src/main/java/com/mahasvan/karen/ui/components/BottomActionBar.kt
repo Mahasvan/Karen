@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Keyboard
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,7 +30,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.mahasvan.karen.R
 import com.mahasvan.karen.assistant.AssistantState
-import androidx.compose.material3.MaterialTheme
 import com.mahasvan.karen.ui.theme.AssistantTheme
 
 private val ButtonSize = 45.dp
@@ -72,7 +72,7 @@ fun BottomActionBar(
                 targetState = state == AssistantState.Listening,
                 transitionSpec = {
                     (fadeIn() + scaleIn(initialScale = 0.8f)) togetherWith
-                        (fadeOut() + scaleOut(targetScale = 0.8f))
+                            (fadeOut() + scaleOut(targetScale = 0.8f))
                 },
                 label = "mic",
             ) { listening ->

@@ -10,11 +10,11 @@ import com.mahasvan.karen.tools.clock.TIMER_TOOL
 import com.mahasvan.karen.tools.clock.formatClock
 import com.mahasvan.karen.tools.clock.formatDuration
 import com.mahasvan.karen.tools.telephony.CALL_TOOL
-import java.util.Calendar
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.flow
+import java.util.Calendar
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
@@ -61,7 +61,7 @@ class StubAssistantBackend(
             "timer" in text -> emitTimer(text)
             "alarm" in text || "wake me" in text -> emitAlarm(text)
             "meeting" in text || "event" in text || "schedule" in text ||
-                "calendar" in text || "remind" in text -> emitEvent(prompt)
+                    "calendar" in text || "remind" in text -> emitEvent(prompt)
 
             else -> emit(
                 AssistantReply.Text(

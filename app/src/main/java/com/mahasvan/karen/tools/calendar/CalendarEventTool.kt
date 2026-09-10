@@ -29,8 +29,16 @@ object CalendarEventTool : Tool {
 
     override val parameters = listOf(
         ToolParameter("title", "Title of the event.", required = true),
-        ToolParameter("start_millis", "Start time as a Unix epoch timestamp in milliseconds.", required = true),
-        ToolParameter("end_millis", "End time in milliseconds. Defaults to one hour after the start.", required = false),
+        ToolParameter(
+            "start_millis",
+            "Start time as a Unix epoch timestamp in milliseconds.",
+            required = true
+        ),
+        ToolParameter(
+            "end_millis",
+            "End time in milliseconds. Defaults to one hour after the start.",
+            required = false
+        ),
     )
 
     override fun execute(context: Context, arguments: Map<String, String>): ToolResult {

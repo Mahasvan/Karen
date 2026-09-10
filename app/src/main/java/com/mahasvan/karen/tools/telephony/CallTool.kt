@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.ContactsContract
-import androidx.compose.runtime.Immutable
 import androidx.core.net.toUri
 import com.mahasvan.karen.tools.Tool
 import com.mahasvan.karen.tools.ToolParameter
@@ -22,7 +21,7 @@ object CallTool : Tool {
 
     override val description =
         "Open the dialer pre-filled with a phone number, or look up a contact by name. " +
-            "Never places the call; the user presses dial."
+                "Never places the call; the user presses dial."
 
     override val parameters = listOf(
         ToolParameter("target", "A phone number or a contact name.", required = true),

@@ -1,5 +1,7 @@
 package com.mahasvan.karen.tools
 
+import com.mahasvan.karen.tools.ToolRegistry.tool
+import com.mahasvan.karen.tools.ToolRegistry.tools
 import com.mahasvan.karen.tools.calendar.CalendarEventTool
 import com.mahasvan.karen.tools.clock.AlarmTool
 import com.mahasvan.karen.tools.clock.TimerTool

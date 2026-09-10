@@ -150,7 +150,7 @@ fun AssistantOverlay(
                     }
                 } else {
                     val isThinking = uiState.state == AssistantState.Processing &&
-                        uiState.conversation.lastOrNull() is ConversationItem.UserQuery
+                            uiState.conversation.lastOrNull() is ConversationItem.UserQuery
                     ConversationStream(
                         conversation = uiState.conversation,
                         partialTranscript = uiState.partialTranscript,
@@ -221,6 +221,7 @@ private fun AssistantError.message(): String = when (this) {
     is AssistantError.ModelUnavailable -> detail
         ?.takeIf { it.isNotBlank() }
         ?: stringResource(R.string.error_model_unavailable)
+
     is AssistantError.Unknown -> detail
         ?.takeIf { it.isNotBlank() }
         ?: stringResource(R.string.error_unknown)

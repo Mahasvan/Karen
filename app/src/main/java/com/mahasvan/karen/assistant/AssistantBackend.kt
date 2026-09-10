@@ -1,7 +1,7 @@
 package com.mahasvan.karen.assistant
 
-import java.io.IOException
 import kotlinx.coroutines.flow.Flow
+import java.io.IOException
 
 /**
  * Turns a prompt into replies. The ViewModel and composables are agnostic to the
