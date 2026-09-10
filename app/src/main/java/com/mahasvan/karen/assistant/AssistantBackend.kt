@@ -34,9 +34,10 @@ interface AssistantBackend {
     fun retry(): Flow<AssistantReply>?
 
     /**
-     * Releases native resources or other heavyweight state. Called by the
-     * ViewModel's [onCleared][androidx.lifecycle.ViewModel.onCleared]. Safe to
-     * call when nothing is loaded.
+     * Releases per-session resources (e.g. conversation state). Called by the
+     * ViewModel's [onCleared][androidx.lifecycle.ViewModel.onCleared].
+     * Implementations may keep heavyweight state (e.g. a loaded model engine)
+     * alive across calls for faster re-invocation.
      */
     fun close()
 }

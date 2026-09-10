@@ -14,6 +14,7 @@ import com.google.ai.edge.litertlm.ExperimentalApi
 import com.google.ai.edge.litertlm.ExperimentalFlags
 import com.google.ai.edge.litertlm.LogSeverity
 import com.google.ai.edge.litertlm.Message
+import com.google.ai.edge.litertlm.SupportedModalities
 import com.google.ai.edge.litertlm.Tool
 import com.google.ai.edge.litertlm.ToolParam
 import com.google.ai.edge.litertlm.ToolProvider
@@ -50,7 +51,12 @@ private fun Message.text(): String =
  * The model is a pre-compiled Edge TPU build
  * (`gemma-4-E2B-it_Google_Tensor_G5.litertlm`) that needs
  * `libLiteRtDispatch_GoogleTensor.so` in `jniLibs/arm64-v8a/`; without it every
- * signature falls back to XNNPACK and the `main` subgraph fails to prepare.
+ * signature falls back to `XNNPACK` and the `main` subgraph fails to prepare.
+ *
+ * The [Engine] is a process-wide singleton (see [companion][Companion]): created
+ * once, kept alive across Activity destruction. Only the [Conversation] is
+ * per-instance — [close] closes the conversation, not the engine. This avoids
+ * re-reading model weights and re-compiling for the NPU on every invocation.
  *
  * Tool calling uses LiteRT-LM's [ToolSet] / [ToolProvider] with
  * `automaticToolCalling = on`: the runtime invokes the matching `@Tool` method and
@@ -68,10 +74,116 @@ class TensorAssistantBackend(
     private val maxNumTokens: Int = 1024,
 ) : AssistantBackend {
 
-    private var engine: Engine? = null
     private var conversation: Conversation? = null
     private var lastPrompt: String? = null
     private var turnCount = 0
+
+    /**
+     * This companion object controls the LLM lifecycle.
+     * The model will be held in memory even after the view is destroyed.
+     * Unless of course the OS closes the app and reclaims the memory.
+     **/
+    companion object {
+        // todo: Make a settings page to select the model and backend and stuff
+        private const val MODEL_FILENAME = "gemma-4-E2B-it_Google_Tensor_G5.litertlm"
+
+        private var sharedEngine: Engine? = null
+
+        fun defaultModelFile(context: Context): File =
+            File(context.filesDir, MODEL_FILENAME)
+
+        @OptIn(ExperimentalApi::class)
+        private fun ensureEngine(context: Context, modelFile: File, maxNumTokens: Int): Engine {
+            sharedEngine?.let { return it }
+
+            // On NPU load failure, the useful lines are:
+            // `No dispatch library found in `, `Detected NPU prefill size: `
+            // and `Passed in max_num_tokens (...) with NPU model max sequence length: (...)`.
+            Engine.setNativeMinLogSeverity(LogSeverity.VERBOSE)
+
+            val engineConfig = EngineConfig(
+                modelPath = modelFile.absolutePath,
+                // nativeLibraryDir is where LiteRT looks for the
+                // dispatch backend (libLiteRtDispatch_GoogleTensor.so).
+                backend = Backend.NPU(nativeLibraryDir = context.applicationInfo.nativeLibraryDir),
+                maxNumTokens = maxNumTokens,
+                // By default, the NPU JIT cache is written next to the model, which lives
+                // on FUSE-mounted external storage. Keep it on internal storage instead.
+                cacheDir = context.filesDir.absolutePath,
+            )
+
+            val capabilities = readModelCapabilities(modelFile)
+            Log.i(
+                TAG,
+                "Model capabilities: speculativeDecoding=${capabilities.speculativeDecoding}, " +
+                    "thinking=${capabilities.thinking}, " +
+                    "functionCalling=${capabilities.functionCalling}, " +
+                    "modalities=${capabilities.inputModalities}",
+            )
+            if (!capabilities.functionCalling) {
+                Log.w(
+                    TAG,
+                    "Model does not advertise function calling; tools may be " +
+                        "ignored or hallucinated rather than invoked.",
+                )
+            }
+            ExperimentalFlags.enableSpeculativeDecoding = capabilities.speculativeDecoding
+
+            return try {
+                val newEngine = Engine(engineConfig).also { it.initialize() }
+                sharedEngine = newEngine
+                newEngine
+            } catch (e: Exception) {
+                throw ModelUnavailableException(
+                    "Could not start the on-device model: ${e.message ?: e.javaClass.simpleName}. " +
+                        "Check logcat (tag: litert) for dispatch backend or TPU errors.",
+                    e,
+                )
+            }
+        }
+
+        /** OS reclaims native memory on process death.
+         * Use releaseEngine() only if memory pressure becomes measurable.
+         * Haven't found a use for this yet. Keeping it here just because. */
+        fun releaseEngine() {
+            sharedEngine?.let { runCatching { it.close() } }
+            sharedEngine = null
+        }
+
+        /**
+         * Model capabilities probed before the engine touches the file, so a mismatched
+         * or truncated model reports something legible. `functionCalling` returns `false`
+         * but tool calling works anyway (prompt-driven, not grammar-constrained), so it's
+         * a warning, never a hard gate.
+         */
+        data class ModelCapabilities(
+            val speculativeDecoding: Boolean,
+            val thinking: Boolean,
+            val functionCalling: Boolean,
+            val inputModalities: SupportedModalities,
+        )
+
+        private fun readModelCapabilities(modelFile: File): ModelCapabilities =
+            runCatching {
+                Capabilities(modelFile.absolutePath).use { c ->
+                    ModelCapabilities(
+                        speculativeDecoding = c.hasSpeculativeDecodingSupport(),
+                        thinking = c.supportsThinking(),
+                        functionCalling = c.supportsFunctionCalling(),
+                        inputModalities = c.inputModalities(),
+                    )
+                }
+            }.getOrElse {
+                Log.w(TAG, "Could not read model capabilities", it)
+                // return that the model supports only text, to be safe
+                ModelCapabilities(
+                    false,
+                    thinking = false,
+                    functionCalling = false,
+                    inputModalities = SupportedModalities(text = true, vision = false, audio = false , video = false)
+                )
+            }
+    }
 
     /**
      * Results from tool calls during the current turn, drained by [respond] after
@@ -126,11 +238,9 @@ class TensorAssistantBackend(
     override fun retry(): Flow<AssistantReply>? = lastPrompt?.let { respond(it) }
 
     /**
-     * Lazily initializes the engine and opens a fresh conversation on first use. This is a
-     * blocking native call (several seconds); [respond] runs on [Dispatchers.IO] via
-     * [flowOn], so the block is safe here.
+     * Opens a fresh conversation on the shared engine. The engine is created once per
+     * process (see [companion][Companion]); only the conversation is per-instance.
      */
-    @OptIn(ExperimentalApi::class)
     private fun ensureLoaded() {
         if (conversation != null) return
         if (!modelFile.exists()) {
@@ -140,29 +250,9 @@ class TensorAssistantBackend(
             )
         }
 
-        // Routes the native runtime's diagnostics into logcat. On an NPU load failure the
-        // useful lines are "No dispatch library found in ", "Detected NPU prefill size: "
-        // and "Passed in max_num_tokens (...) with NPU model max sequence length: (...)".
-        Engine.setNativeMinLogSeverity(LogSeverity.VERBOSE)
-
-        val supportsSpeculativeDecoding = readSpeculativeDecodingSupport(modelFile)
-
-        val engineConfig = EngineConfig(
-            modelPath = modelFile.absolutePath,
-            // The Tensor TPU is accessed through LiteRT-LM's NPU backend; there is no
-            // separate TPU delegate. nativeLibraryDir is where LiteRT looks for the
-            // dispatch backend (libLiteRtDispatch_GoogleTensor.so).
-            backend = Backend.NPU(nativeLibraryDir = context.applicationInfo.nativeLibraryDir),
-            maxNumTokens = maxNumTokens,
-            // Left to default, the NPU JIT cache is written next to the model, which lives
-            // on FUSE-mounted external storage. Keep it on internal storage instead.
-            cacheDir = context.filesDir.absolutePath,
-        )
-
-        ExperimentalFlags.enableSpeculativeDecoding = supportsSpeculativeDecoding
         try {
-            val newEngine = Engine(engineConfig).also { it.initialize() }
-            val newConversation = newEngine.createConversation(
+            val engine = ensureEngine(context, modelFile, maxNumTokens)
+            conversation = engine.createConversation(
                 ConversationConfig(
                     systemInstruction = buildSystemInstruction(),
                     // topK/topP/temperature aren't configurable on the NPU accelerator — it
@@ -174,8 +264,8 @@ class TensorAssistantBackend(
                     tools = listOf(tool(AssistantToolSet(context, completedTools))),
                 ),
             )
-            engine = newEngine
-            conversation = newConversation
+        } catch (e: ModelUnavailableException) {
+            throw e
         } catch (e: Exception) {
             throw ModelUnavailableException(
                 "Could not start the on-device model: ${e.message ?: e.javaClass.simpleName}. " +
@@ -186,38 +276,7 @@ class TensorAssistantBackend(
     }
 
     /**
-     * Reads the model container's capabilities before the engine touches it, so a
-     * mismatched or truncated file reports something legible. `supportsFunctionCalling()`
-     * returns `false` but tool calling works anyway (it's prompt-driven, not
-     * grammar-constrained), so the probe is a warning, never a hard gate.
-     */
-    private fun readSpeculativeDecodingSupport(modelFile: File): Boolean =
-        runCatching {
-            Capabilities(modelFile.absolutePath).use { capabilities ->
-                Log.i(
-                    TAG,
-                    "Model capabilities: speculativeDecoding=" +
-                            "${capabilities.hasSpeculativeDecodingSupport()}, " +
-                            "thinking=${capabilities.supportsThinking()}, " +
-                            "functionCalling=${capabilities.supportsFunctionCalling()}, " +
-                            "modalities=${capabilities.inputModalities()}",
-                )
-                if (!capabilities.supportsFunctionCalling()) {
-                    Log.w(
-                        TAG,
-                        "Model does not advertise function calling; tools may be " +
-                                "ignored or hallucinated rather than invoked.",
-                    )
-                }
-                capabilities.hasSpeculativeDecodingSupport()
-            }
-        }.getOrElse {
-            Log.w(TAG, "Could not read model capabilities", it)
-            false
-        }
-
-    /**
-     * Frozen at model load, so anything time-dependent is stale after that. Without
+     * Frozen at conversation creation, so anything time-dependent is stale after that. Without
      * a wall-clock reference the model cannot turn "set an alarm for three hours from
      * now" into an hour/minute pair. Also governs confirmation: sensitive actions
      * (calling) must be confirmed through conversation first; non-sensitive tools
@@ -242,12 +301,10 @@ class TensorAssistantBackend(
         )
     }
 
-    /** Releases native engine/conversation resources. Safe to call when nothing is loaded. */
+    /** Closes the conversation only. The shared engine persists across Activity destruction. */
     override fun close() {
         conversation?.let { runCatching { it.close() } }
         conversation = null
-        engine?.let { runCatching { it.close() } }
-        engine = null
     }
 
     /**
@@ -331,13 +388,5 @@ class TensorAssistantBackend(
                 mapOf("status" to "error", "message" to result.message)
             }
         }
-    }
-
-    companion object {
-        private const val MODEL_FILENAME = "gemma-4-E2B-it_Google_Tensor_G5.litertlm"
-
-        /** Default model location: app-private internal storage (avoids FUSE permission issues). */
-        fun defaultModelFile(context: Context): File =
-            File(context.filesDir, MODEL_FILENAME)
     }
 }
