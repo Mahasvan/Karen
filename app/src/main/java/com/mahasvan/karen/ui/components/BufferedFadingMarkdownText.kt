@@ -10,6 +10,7 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -138,28 +139,30 @@ fun MarkdownText(
     linkColor: Color = MaterialTheme.colorScheme.primary,
 ) {
     val fontSize = MaterialTheme.typography.bodyLarge.fontSize
-    ProvideTextStyle(
-        value = TextStyle(
-            fontSize = fontSize,
-            lineHeight = fontSize * 1.5f,
-            color = textColor,
-            letterSpacing = 0.2.sp,
-        )
-    ) {
-        RichText(
-            modifier = modifier,
-            style = RichTextStyle(
-                codeBlockStyle = CodeBlockStyle(
-                    textStyle = TextStyle(
-                        fontSize = MaterialTheme.typography.bodySmall.fontSize,
-                        fontFamily = FontFamily.Monospace,
-                        lineHeight = MaterialTheme.typography.bodySmall.fontSize * 1.4f,
-                    )
-                ),
-                stringStyle = RichTextStringStyle(linkStyle = TextLinkStyles(style = SpanStyle(color = linkColor))),
-            ),
+    CompositionLocalProvider {
+        ProvideTextStyle(
+            value = TextStyle(
+                fontSize = fontSize,
+                lineHeight = fontSize * 1.5f,
+                color = textColor,
+                letterSpacing = 0.2.sp,
+            )
         ) {
-            Markdown(content = text)
+            RichText(
+                modifier = modifier,
+                style = RichTextStyle(
+                    codeBlockStyle = CodeBlockStyle(
+                        textStyle = TextStyle(
+                            fontSize = MaterialTheme.typography.bodySmall.fontSize,
+                            fontFamily = FontFamily.Monospace,
+                            lineHeight = MaterialTheme.typography.bodySmall.fontSize * 1.4f,
+                        )
+                    ),
+                    stringStyle = RichTextStringStyle(linkStyle = TextLinkStyles(style = SpanStyle(color = linkColor))),
+                ),
+            ) {
+                Markdown(content = text)
+            }
         }
     }
 }

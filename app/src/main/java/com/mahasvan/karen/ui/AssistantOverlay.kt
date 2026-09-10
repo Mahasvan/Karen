@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,6 +24,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
@@ -49,18 +51,23 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.mahasvan.karen.R
 import com.mahasvan.karen.assistant.AssistantError
 import com.mahasvan.karen.assistant.AssistantState
 import com.mahasvan.karen.assistant.AssistantUiState
 import com.mahasvan.karen.assistant.ConversationItem
-import com.mahasvan.karen.ui.components.AssistantHeroLogo
+import com.mahasvan.karen.ui.components.AssistantAvatar
 import com.mahasvan.karen.ui.components.BottomActionBar
 import com.mahasvan.karen.ui.components.ConversationStream
 import com.mahasvan.karen.ui.components.GlowingLightBar
 import com.mahasvan.karen.ui.components.SuggestionGrid
 import com.mahasvan.karen.ui.theme.AssistantTheme
+import com.mahasvan.karen.ui.theme.AppTheme
+import androidx.compose.ui.tooling.preview.Preview
+import kotlin.random.Random
 
 private val SheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
 
@@ -94,7 +101,7 @@ fun AssistantOverlay(
         // A landscape phone has so little height that the mockup's half-screen sheet leaves
         // nothing usable, so the resting sheet takes proportionally more of a short window.
         val shortWindow = maxHeight < ShortWindowHeight
-        val restingFraction = if (shortWindow) 0.72f else 0.5f
+        val restingFraction = if (shortWindow) 0.4f else 0.4f
         val grownFraction = if (shortWindow) 0.95f else 0.9f
 
         val sheetFraction by animateFloatAsState(
@@ -150,12 +157,41 @@ fun AssistantOverlay(
                 DragHandle()
 
                 if (uiState.showSuggestionGrid) {
+                    // Temporary testing shortcuts — will be removed later.
                     SuggestionGrid(
                         onSuggestionClick = onSubmit,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                     )
-                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                        AssistantHeroLogo(animate = uiState.state != AssistantState.Listening)
+                    Column(
+                        modifier = Modifier.fillMaxWidth().weight(1f),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        // Header: logo + "Try saying"
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            AssistantAvatar(size = 24.dp)
+                            Text(
+                                text = stringResource(R.string.try_saying),
+                                style = MaterialTheme.typography.titleLarge,
+                                color = palette.textPrimary,
+                                fontWeight = FontWeight.Medium,
+//                                fontSize = 16.sp,
+                            )
+                        }
+                        Spacer(Modifier.height(12.dp))
+                        // Suggestion text — random pick, relevant to available tools.
+                        val suggestion = remember { LandingSuggestions.random(Random) }
+                        Text(
+                            text = "“$suggestion”",
+                            color = palette.suggestionAccent,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 40.dp),
+                        )
                     }
                 } else {
                     val isThinking = uiState.state == AssistantState.Processing &&
@@ -294,3 +330,43 @@ private fun TextInputRow(onSubmit: (String) -> Unit) {
         }
     }
 }
+
+@Preview(showBackground = true)
+@Composable
+fun AssistantOverlayInitialPreview() {
+    AppTheme {
+        AssistantOverlay(
+            uiState = AssistantUiState(
+                state = AssistantState.Idle,
+                conversation = emptyList()
+            ),
+            onMicClick = {},
+            onKeyboardClick = {},
+            onSubmit = {},
+            onRetry = {},
+            onDismiss = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AssistantOverlayConversationPreview() {
+    AppTheme {
+        AssistantOverlay(
+            uiState = AssistantUiState(
+                state = AssistantState.DisplayingResult,
+                conversation = listOf(
+                    ConversationItem.UserQuery(id = 1L, text = "Hello, Karen! What can you do?"),
+                    ConversationItem.AssistantText(id = 2L, text = "I can help you manage your tasks, answer questions, and control smart devices around your home.")
+                )
+            ),
+            onMicClick = {},
+            onKeyboardClick = {},
+            onSubmit = {},
+            onRetry = {},
+            onDismiss = {}
+        )
+    }
+}
+

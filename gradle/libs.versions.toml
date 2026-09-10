@@ -34,6 +34,7 @@ androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "l
 litertlm-android = { group = "com.google.ai.edge.litertlm", name = "litertlm-android", version.ref = "litertlm" }
 commonmark = { group = "com.halilibo.compose-richtext", name = "richtext-commonmark", version.ref = "commonmark" }
 richtext = { group = "com.halilibo.compose-richtext", name = "richtext-ui-material3", version.ref = "richtext" }
+richtext-ui = { group = "com.halilibo.compose-richtext", name = "richtext-ui", version.ref = "richtext" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

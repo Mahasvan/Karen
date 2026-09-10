@@ -9,6 +9,9 @@
     <string name="input_placeholder">Ask your assistant</string>
     <string name="overlay_dismiss">Dismiss</string>
 
+    <!-- Landing -->
+    <string name="try_saying">Try saying</string>
+
     <!-- Suggestion grid. The prompts are phrased as the user would speak them. -->
     <string name="suggestion_alarm_label">Alarm</string>
     <string name="suggestion_alarm_prompt">set an alarm for 7 am</string>

@@ -27,6 +27,7 @@ data class AssistantPalette(
     val actionButton: Color,
     val actionIconTint: Color,
     val cardSurface: Color,
+    val suggestionAccent: Color,
 )
 
 private fun ColorScheme.toAssistantPalette(darkTheme: Boolean) = AssistantPalette(
@@ -39,6 +40,7 @@ private fun ColorScheme.toAssistantPalette(darkTheme: Boolean) = AssistantPalett
     actionButton = surfaceContainerHighest,
     actionIconTint = onSurfaceVariant,
     cardSurface = surfaceContainer,
+    suggestionAccent = if (darkTheme) Color(0xFFA8C7FA) else primary,
 )
 
 val LocalAssistantPalette = staticCompositionLocalOf {
