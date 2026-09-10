@@ -40,7 +40,7 @@ object AlarmTool : Tool {
                     putExtra(AlarmClock.EXTRA_HOUR, hour)
                     putExtra(AlarmClock.EXTRA_MINUTES, minute)
                     putExtra(AlarmClock.EXTRA_MESSAGE, label)
-                    putExtra(AlarmClock.EXTRA_SKIP_UI, false)
+                    putExtra(AlarmClock.EXTRA_SKIP_UI, true)
                 }.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             )
             ToolResult(true, "Alarm set", AlarmCard(hour, minute, label))
