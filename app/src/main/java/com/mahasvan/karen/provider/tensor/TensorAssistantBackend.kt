@@ -254,6 +254,7 @@ class TensorAssistantBackend(
      * exception aborts the turn, while a returned error is fed back to the model so
      * it can apologise or retry with corrected arguments.
      */
+    @Suppress("unused") // @Tool methods are called via reflection by LiteRT-LM
     class AssistantToolSet(
         private val context: Context,
         private val pendingCards: ConcurrentLinkedQueue<ToolCard>,

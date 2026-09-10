@@ -23,6 +23,7 @@ import kotlin.time.Duration.Companion.milliseconds
  * real backend would. The tool fires the intent and returns a card; this backend
  * emits the card into the conversation.
  */
+@Suppress("unused") // retained for testing and offline development
 class StubAssistantBackend(
     private val context: Context,
 ) : AssistantBackend {
