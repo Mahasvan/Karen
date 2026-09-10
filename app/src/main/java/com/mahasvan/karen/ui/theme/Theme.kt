@@ -72,8 +72,8 @@ private val LightColorScheme = lightColorScheme(
 )
 
 /**
- * Four distinguishable tones pulled from the wallpaper palette. The three accent families
- * only yield three hues, so the fourth dot is a lighter tone of accent1 — which is why a
+ * Four tones from the wallpaper palette. The three accent families yield only
+ * three hues, so the fourth dot is a lighter tone of accent1 — which is why
  * Material You reads as tonal rather than four-colour.
  */
 @Composable

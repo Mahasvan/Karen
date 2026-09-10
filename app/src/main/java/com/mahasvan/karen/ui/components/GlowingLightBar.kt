@@ -27,9 +27,8 @@ private val MinBarHeight = 4.dp
 private val MaxBarHeight = 10.dp
 
 /**
- * The travelling glow pinned to the very bottom edge of the screen while listening.
- * The gradient is repeated across three tile widths so the horizontal sweep never
- * reveals an edge.
+ * Travelling glow pinned to the bottom edge while listening. The gradient is
+ * tiled across three widths so the horizontal sweep never reveals an edge.
  */
 @Composable
 fun GlowingLightBar(modifier: Modifier = Modifier) {

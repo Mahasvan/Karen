@@ -23,8 +23,8 @@ import kotlin.math.min
 private data class LogoDot(val cx: Float, val cy: Float, val r: Float)
 
 /**
- * Circle centres and radii are lifted straight from the mockup SVG and re-originned to
- * the logo's own bounding box, so proportions survive any scaling.
+ * Circle centres and radii from the mockup SVG, re-originned to the logo's
+ * bounding box so proportions survive any scaling.
  */
 private val SmallLogoViewport = Size(144.11f, 129.73f)
 private val SmallLogoDots = listOf(
@@ -97,13 +97,10 @@ private fun LogoCanvas(
 }
 
 /**
- * The "thinking" indicator: four brand-coloured dots pulsing in sequence while the model
- * generates a response. Shown in the assistant response position (left-aligned, after the
- * avatar) so the transition to streaming text is seamless — the avatar stays put and the
- * dots are replaced by the first text chunk.
- *
- * Each dot scales between 0.4 and 1.0 with a staggered phase, matching the classic Google
- * Assistant thinking animation.
+ * Four brand-coloured dots pulsing in sequence while the model generates. Shown
+ * in the assistant response position so the transition to streaming text is
+ * seamless — the avatar stays put and the dots are replaced by the first text
+ * chunk. Each dot scales between 0.4 and 1.0 with a staggered phase.
  */
 @Composable
 fun ThinkingDots(modifier: Modifier = Modifier, dotSize: Dp = 8.dp) {

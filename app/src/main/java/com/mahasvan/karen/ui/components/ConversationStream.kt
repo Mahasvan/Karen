@@ -109,8 +109,7 @@ private fun UserBubble(text: String, dimmed: Boolean = false) {
 }
 
 /**
- * Modern Assistant puts response text straight on the surface with no bubble, unlike the
- * mockup's white pills.
+ * Response text shown directly on the surface with no bubble.
  */
 @Composable
 private fun AssistantResponse(text: String) {
@@ -129,9 +128,9 @@ private fun AssistantResponse(text: String) {
 }
 
 /**
- * The thinking indicator in the assistant response position: avatar + pulsing dots. The
- * avatar stays in the same spot as a real response, so the dots-to-text transition is a
- * seamless swap rather than a layout jump.
+ * Thinking indicator in the assistant response position: avatar + pulsing dots.
+ * The avatar stays in the same spot as a real response, so the dots-to-text
+ * transition is seamless.
  */
 @Composable
 private fun ThinkingRow() {

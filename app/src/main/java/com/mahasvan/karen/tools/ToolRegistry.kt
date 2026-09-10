@@ -6,11 +6,10 @@ import com.mahasvan.karen.tools.clock.TimerTool
 import com.mahasvan.karen.tools.telephony.CallTool
 
 /**
- * The tools the app exposes. This list is the single registration point: a new capability is
- * a new directory under `tools/` plus one entry here.
- *
- * A backend advertises [tools] to its model and routes the model's chosen function name
- * back through [tool]; the UI resolves a card's renderer the same way.
+ * Single registration point for all tools. A new capability is a new directory
+ * under `tools/` plus one entry here. Backends advertise [tools] to their model
+ * and route the model's chosen function name back through [tool]; the UI
+ * resolves a card's renderer the same way.
  */
 object ToolRegistry {
 

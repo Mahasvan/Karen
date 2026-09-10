@@ -63,9 +63,9 @@ private val Suggestions = listOf(
 )
 
 /**
- * The launcher grid from the mockup, now one row wide since the app only supports four
- * things. Scrolling is disabled and the height is pinned to the row count, because this
- * sits above a LazyColumn in the same Column.
+ * Launcher grid: one row of four suggestions. Scrolling is disabled and height
+ * is pinned to the row count, because this sits above a LazyColumn in the same
+ * Column.
  */
 @Composable
 fun SuggestionGrid(

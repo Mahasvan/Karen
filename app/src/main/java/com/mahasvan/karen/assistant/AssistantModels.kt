@@ -7,9 +7,9 @@ import com.mahasvan.karen.tools.ToolCard
 sealed interface AssistantReply {
 
     /**
-     * A message from the assistant. A backend that streams tokens should emit one [Text] per
-     * message and reuse the same [id] for every update to it, so the UI grows a single bubble
-     * instead of one bubble per token. Backends that reply in one shot can leave [id] null.
+     * A message from the assistant. Streaming backends reuse the same [id] for every
+     * update so the UI grows a single bubble instead of one per token. One-shot
+     * backends can leave [id] null.
      */
     @Immutable
     data class Text(val text: String, val id: String? = null) : AssistantReply
@@ -39,18 +39,15 @@ sealed interface ConversationItem {
 }
 
 /**
- * Why a turn failed, in terms the UI can act on rather than in terms of whichever backend
- * produced it. Each provider maps its own failures onto these: a remote OpenAI-compatible
- * endpoint yields [Network] for a dropped connection and [ModelUnavailable] for a 404 on the
- * model name, while an on-device LiteRT backend yields [ModelUnavailable] when weights are
- * missing. The UI only branches on [recoverable].
+ * Why a turn failed, in terms the UI can act on. Each backend maps its own
+ * failures onto these. The UI only branches on [recoverable].
  */
 @Immutable
 sealed interface AssistantError {
     /** Whether retrying the same prompt could plausibly succeed. */
     val recoverable: Boolean
 
-    /** Transport failed. Remote providers only; retrying is usually worth it. */
+    /** Transport failed. Retrying is usually worth it. */
     @Immutable
     data object Network : AssistantError {
         override val recoverable: Boolean get() = true

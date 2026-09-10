@@ -24,11 +24,9 @@ import com.mahasvan.karen.ui.theme.AssistantTheme
 private val CardShape = RoundedCornerShape(16.dp)
 
 /**
- * The informational card every tool shares: leading glyph, title over subtitle. The intent
- * has already fired by the time this card appears — there is no confirm button.
- *
- * Tools compose this rather than reimplementing it, so a new capability inherits the card
- * styling for free.
+ * The informational card every tool shares: leading glyph, title over subtitle.
+ * The intent has already fired by the time this card appears. Tools compose this
+ * rather than reimplementing it, so a new capability inherits the styling for free.
  */
 @Composable
 fun ActionCard(

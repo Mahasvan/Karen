@@ -36,8 +36,8 @@ private val ButtonSize = 45.dp
 private val ButtonGap = 35.dp
 
 /**
- * Lens / microphone / keyboard, the one element that is identical across every mockup
- * frame. The microphone slot swaps to the voice visualizer while listening.
+ * Lens / microphone / keyboard. The microphone slot swaps to the voice
+ * visualizer while listening.
  */
 @Composable
 fun BottomActionBar(

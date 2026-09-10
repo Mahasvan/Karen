@@ -67,8 +67,8 @@ object CalendarEventTool : Tool {
 }
 
 /**
- * Resolved per call rather than cached in a field, so a locale or time-zone change while the
- * process is alive is picked up instead of being frozen at class-init.
+ * Resolved per call so a locale or time-zone change while the process is alive
+ * is picked up instead of being frozen at class-init.
  */
 private fun formatEventStart(startMillis: Long): String =
     DateTimeFormatter.ofPattern("EEE d MMM, h:mm a")

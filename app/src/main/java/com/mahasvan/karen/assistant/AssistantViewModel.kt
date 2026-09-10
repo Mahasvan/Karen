@@ -51,9 +51,8 @@ class AssistantViewModel(
     }
 
     /**
-     * Re-runs the last prompt without duplicating it in the transcript. The backend owns
-     * the history and therefore owns the retry: it replays the prompt against the history
-     * as it stood before the failed turn.
+     * Re-runs the last prompt without duplicating it in the transcript. The backend
+     * owns history and therefore owns the retry.
      */
     fun retry() {
         val replies = backend.retry() ?: return
@@ -95,9 +94,9 @@ class AssistantViewModel(
     }
 
     /**
-     * Streaming backends re-emit the same message as it grows, tagged with a stable
-     * [AssistantReply.Text.id]. Matching on that id keeps a streamed reply in one bubble
-     * rather than producing one per token.
+     * Streaming backends re-emit the same message as it grows, tagged with a
+     * stable [AssistantReply.Text.id]. Matching on that id keeps a streamed reply
+     * in one bubble rather than one per token.
      */
     private fun appendOrUpdateText(reply: AssistantReply.Text) {
         val streamId = reply.id

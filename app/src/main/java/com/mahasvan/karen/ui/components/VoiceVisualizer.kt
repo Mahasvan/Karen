@@ -34,11 +34,9 @@ private val PeakHeights = listOf(64.7.dp, 34.0.dp, 54.7.dp, 41.7.dp)
 private val BeatDurations = listOf(420, 300, 380, 340)
 
 /**
- * The four brand dots. At rest they are a static row; while [listening] they morph into
- * bars that bounce independently, approximating voice amplitude.
- *
- * [scale] shrinks the whole rig proportionally so the same component can sit inside the
- * 45.dp microphone button as well as standing alone at mockup size.
+ * Four brand dots. At rest they are a static row; while [listening] they morph
+ * into bars that bounce independently, approximating voice amplitude. [scale]
+ * shrinks the whole rig so it can sit inside the 45.dp mic button or stand alone.
  */
 @Composable
 fun VoiceVisualizer(

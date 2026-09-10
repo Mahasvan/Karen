@@ -64,8 +64,8 @@ import com.mahasvan.karen.ui.theme.AssistantTheme
 private val SheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
 
 /**
- * Past this width the sheet stops spanning the window and centres instead, so it stays
- * thumb-sized on tablets and unfolded foldables rather than becoming a full-width slab.
+ * Past this width the sheet centres instead of spanning, so it stays thumb-sized
+ * on tablets and foldables.
  */
 private val SheetMaxWidth = 560.dp
 
@@ -73,8 +73,9 @@ private val SheetMaxWidth = 560.dp
 private val ShortWindowHeight = 480.dp
 
 /**
- * The whole screen is transparent; only the bottom slice is occupied. The sheet grows
- * from its resting fraction to a near-full cap once the conversation has content to show.
+ * Transparent full-screen overlay; only the bottom sheet is occupied. The sheet
+ * grows from its resting fraction to a near-full cap once the conversation has
+ * content.
  */
 @Composable
 fun AssistantOverlay(

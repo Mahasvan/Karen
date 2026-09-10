@@ -7,8 +7,8 @@ import kotlinx.coroutines.flow.flow
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
- * Canned utterances standing in for a real recognizer. A real implementation wraps the
- * platform [android.speech.SpeechRecognizer] and emits its partial results the same way.
+ * Canned utterances standing in for a real recognizer. A real implementation
+ * wraps [android.speech.SpeechRecognizer] and emits partial results the same way.
  */
 class StubSpeechSource : SpeechSource {
 

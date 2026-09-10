@@ -18,22 +18,18 @@ import kotlinx.coroutines.flow.flow
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
- * Keyword matching standing in for real language understanding.
- *
- * The keywords play the role of a model's function call: each branch picks a tool name and
- * builds the arguments map, then hands both to [ToolRegistry] which looks up the tool and
- * calls [Tool.execute][com.mahasvan.karen.tools.Tool.execute] — exactly as a real backend
- * would. The tool fires the intent immediately and returns a card; this backend emits the
- * card into the conversation.
+ * Keyword matching standing in for real language understanding. Each branch picks
+ * a tool name and arguments, then hands them to [ToolRegistry] — exactly as a
+ * real backend would. The tool fires the intent and returns a card; this backend
+ * emits the card into the conversation.
  */
 class StubAssistantBackend(
     private val context: Context,
 ) : AssistantBackend {
 
     /**
-     * Committed turns, oldest first. Keyword matching never reads this; the list exists so
-     * the stub exercises the same stateful contract a real provider depends on, including
-     * commit-on-completion, instead of letting those paths go untested.
+     * Committed turns, oldest first. Keyword matching never reads this; the list
+     * exercises the same commit-on-completion contract a real backend depends on.
      */
     private val history = mutableListOf<HistoryEntry>()
     private var lastPrompt: String? = null
@@ -142,8 +138,8 @@ class StubAssistantBackend(
     }
 
     /**
-     * The half of this class a real backend keeps: look the tool up, execute it (which fires
-     * the intent and returns a card), and emit the card if the tool produced one.
+     * Look the tool up, execute it (which fires the intent and returns a card),
+     * and emit the card if the tool produced one.
      */
     private suspend fun FlowCollector<AssistantReply>.route(
         toolName: String,

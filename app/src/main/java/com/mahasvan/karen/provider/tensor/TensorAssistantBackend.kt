@@ -44,33 +44,23 @@ private fun Message.text(): String =
     contents.contents.filterIsInstance<Content.Text>().joinToString("") { it.text }
 
 /**
- * On-device [AssistantBackend] backed by a LiteRT-LM model running on the Google Tensor TPU
- * (reached through [Backend.NPU] — "TPU" is a Pixel UI label for the same NPU API).
+ * On-device [AssistantBackend] backed by a LiteRT-LM model on the Google Tensor NPU
+ * (`Backend.NPU` — "TPU" in Pixel UI is the same NPU API).
  *
- * The model is a pre-compiled Edge TPU build (`gemma-4-E2B-it_Google_Tensor_G5.litertlm`):
- * its container carries `tf_lite_aux` and `darwinn_external_parameter_*` sections that the
- * NPU executor consumes directly. Running it additionally requires
- * `libLiteRtDispatch_GoogleTensor.so` in `jniLibs/arm64-v8a/` — LiteRT scans the app's
- * native library directory for a dispatch backend, and without one every signature falls
- * back to XNNPACK and the compiled `main` subgraph fails to prepare with
- * "Failed to allocate tensors". See `references/TENSOR_TPU_NOTES.md` §1.
+ * The model is a pre-compiled Edge TPU build
+ * (`gemma-4-E2B-it_Google_Tensor_G5.litertlm`) that needs
+ * `libLiteRtDispatch_GoogleTensor.so` in `jniLibs/arm64-v8a/`; without it every
+ * signature falls back to XNNPACK and the `main` subgraph fails to prepare.
  *
- * Tool calling uses LiteRT-LM's built-in [ToolSet] / [ToolProvider] with
- * `automaticToolCalling = on` (the default): the runtime invokes the matching `@Tool`
- * method and feeds its return value back as a tool response without the caller driving the
- * loop. The `@Tool` method delegates to [ToolRegistry.execute], which fires the system
- * intent immediately and returns a [com.mahasvan.karen.tools.ToolResult] with an optional
- * card. Cards are queued during the model's generation and emitted as [AssistantReply.Card]
- * after the text stream completes — `sendMessageAsync`'s flow only emits model text, so the
- * card has to be buffered.
+ * Tool calling uses LiteRT-LM's [ToolSet] / [ToolProvider] with
+ * `automaticToolCalling = on`: the runtime invokes the matching `@Tool` method and
+ * feeds its return value back without the caller driving the loop.
+ * `sendMessageAsync`'s flow emits only model text, so tool-produced cards are
+ * queued in [pendingCards] and emitted after the text stream completes.
  *
- * There is no app-level confirmation step. Sensitive actions (e.g. calling) are confirmed by
- * the model through conversation before it calls the tool — the system prompt governs that.
- *
- * The LiteRT-LM [Conversation] owns the chat history. [retry] replays the last prompt
- * against that history; a failed turn may leave a dangling user message in the conversation
- * (the runtime adds it before streaming), so a retry after a failure can produce a duplicate
- * user turn — a known limitation of not being able to roll back the conversation.
+ * The [Conversation] owns chat history. [retry] replays the last prompt; a failed
+ * turn may leave a dangling user message, so a retry can produce a duplicate user
+ * turn — the conversation cannot be rolled back.
  */
 class TensorAssistantBackend(
     private val context: Context,
@@ -84,11 +74,9 @@ class TensorAssistantBackend(
     private var turnCount = 0
 
     /**
-     * Cards produced by tool calls during the current turn, waiting to be emitted after the
-     * model's text stream completes. The [AssistantToolSet] writes here during
-     * `sendMessageAsync`'s internal tool-calling loop; [respond] drains it after the flow
-     * finishes. Thread-safe because the runtime may invoke tool methods on a different
-     * thread than the flow collector.
+     * Cards queued by tool calls during the current turn, drained by [respond] after
+     * the text stream completes. Thread-safe: the runtime may invoke tool methods
+     * on a different thread than the flow collector.
      */
     private val pendingCards = ConcurrentLinkedQueue<ToolCard>()
 
@@ -189,12 +177,10 @@ class TensorAssistantBackend(
     }
 
     /**
-     * Reads the model container's declared capabilities before the engine touches it, so a
-     * mismatched or truncated file reports something legible instead of a native RET_CHECK.
-     * Falls back to leaving speculative decoding off if the container can't be read.
-     *
-     * Per `references/TOOL_CALLING_NOTES.md` §1, `supportsFunctionCalling()` returns `false`
-     * and tool calling works anyway — so the probe is a warning, never a hard gate.
+     * Reads the model container's capabilities before the engine touches it, so a
+     * mismatched or truncated file reports something legible. `supportsFunctionCalling()`
+     * returns `false` but tool calling works anyway (it's prompt-driven, not
+     * grammar-constrained), so the probe is a warning, never a hard gate.
      */
     private fun readSpeculativeDecodingSupport(modelFile: File): Boolean =
         runCatching {
@@ -222,13 +208,11 @@ class TensorAssistantBackend(
         }
 
     /**
-     * The system instruction is frozen at model load, so anything time-dependent is stale
-     * after that. Without a wall-clock reference the model cannot turn "set an alarm for
-     * three hours from now" into an hour/minute pair. See TOOL_CALLING_NOTES.md §4.
-     *
-     * The prompt also governs confirmation: the model is told to confirm sensitive actions
-     * (placing a call) through conversation before calling the tool, and to call non-sensitive
-     * tools (alarms, timers, calendar events) directly without asking.
+     * Frozen at model load, so anything time-dependent is stale after that. Without
+     * a wall-clock reference the model cannot turn "set an alarm for three hours from
+     * now" into an hour/minute pair. Also governs confirmation: sensitive actions
+     * (calling) must be confirmed through conversation first; non-sensitive tools
+     * (alarms, timers, calendar events) are called directly.
      */
     private fun buildSystemInstruction(): Contents {
         val now = LocalDateTime.now()
@@ -260,15 +244,15 @@ class TensorAssistantBackend(
     /**
      * Bridge from LiteRT-LM's reflection-based tool calling to [ToolRegistry].
      *
-     * Each method's name converts to the snake_case tool name the model sees (`setAlarm` →
-     * `set_alarm`, etc. — see TOOL_CALLING_NOTES.md §3). The method receives typed
-     * parameters, builds the arguments map, and delegates to [ToolRegistry.execute], which
-     * validates, fires the system intent immediately, and returns a result with an optional
-     * card. The card is queued for [respond] to emit after the text stream.
+     * Each method name converts camelCase → snake_case for the model (`setAlarm` →
+     * `set_alarm`). Methods receive typed params, build the arguments map, and
+     * delegate to [ToolRegistry.tool] + [Tool.execute][com.mahasvan.karen.tools.Tool.execute],
+     * which validates, fires the intent, and returns a result with an optional card.
+     * The card is queued in [pendingCards] for [respond] to emit after the text stream.
      *
-     * Every method returns `status: "success" | "error"` rather than throwing: a thrown
-     * exception aborts the turn, while a returned error is fed back to the model so it can
-     * apologise or retry with corrected arguments (TOOL_CALLING_NOTES.md §5).
+     * Methods return `status: "success" | "error"` rather than throwing: a thrown
+     * exception aborts the turn, while a returned error is fed back to the model so
+     * it can apologise or retry with corrected arguments.
      */
     class AssistantToolSet(
         private val context: Context,
