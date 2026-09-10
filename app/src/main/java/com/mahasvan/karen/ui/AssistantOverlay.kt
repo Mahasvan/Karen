@@ -1,14 +1,18 @@
 package com.mahasvan.karen.ui
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,6 +26,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.height
@@ -43,16 +48,24 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.mahasvan.karen.R
 import com.mahasvan.karen.assistant.AssistantError
@@ -67,7 +80,9 @@ import com.mahasvan.karen.ui.components.SuggestionGrid
 import com.mahasvan.karen.ui.theme.AssistantTheme
 import com.mahasvan.karen.ui.theme.AppTheme
 import androidx.compose.ui.tooling.preview.Preview
+import kotlin.math.roundToInt
 import kotlin.random.Random
+import kotlinx.coroutines.launch
 
 private val SheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
 
@@ -101,7 +116,7 @@ fun AssistantOverlay(
         // A landscape phone has so little height that the mockup's half-screen sheet leaves
         // nothing usable, so the resting sheet takes proportionally more of a short window.
         val shortWindow = maxHeight < ShortWindowHeight
-        val restingFraction = if (shortWindow) 0.4f else 0.4f
+        val restingFraction = 0.3f
         val grownFraction = if (shortWindow) 0.95f else 0.9f
 
         val sheetFraction by animateFloatAsState(
@@ -109,6 +124,61 @@ fun AssistantOverlay(
             animationSpec = tween(320, easing = FastOutSlowInEasing),
             label = "sheetFraction",
         )
+
+        // Drag-to-dismiss state: px the sheet is pulled down below its resting
+        // position. snapTo during the drag keeps it glued to the finger; release
+        // either springs back or slides away and calls onDismiss.
+        val coroutineScope = rememberCoroutineScope()
+        val haptics = LocalHapticFeedback.current
+        val density = LocalDensity.current
+        val currentOnDismiss by rememberUpdatedState(onDismiss)
+        val sheetDragOffset = remember { Animatable(0f) }
+
+        fun sheetHeightPx() = with(density) { (maxHeight * sheetFraction).toPx() }
+        fun dismissThresholdPx() = sheetHeightPx() * 0.3f
+        fun dismissVelocityPx() = with(density) { 200.dp.toPx() }
+
+        // Haptic once per crossing, so the user feels when the pull becomes a dismiss.
+        var thresholdHapticDone by remember { mutableStateOf(false) }
+
+        fun pullSheet(delta: Float) {
+            val new = (sheetDragOffset.value + delta).coerceAtLeast(0f)
+            coroutineScope.launch { sheetDragOffset.snapTo(new) }
+            val past = new > dismissThresholdPx()
+            if (past && !thresholdHapticDone) {
+                thresholdHapticDone = true
+                haptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
+            } else if (!past) {
+                thresholdHapticDone = false
+            }
+        }
+
+        fun settleSheetDrag(velocityY: Float) {
+            if (sheetDragOffset.value <= 0f) return
+            val dismiss = sheetDragOffset.value > dismissThresholdPx() ||
+                    velocityY > dismissVelocityPx()
+            thresholdHapticDone = false
+            coroutineScope.launch {
+                if (dismiss) {
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    sheetDragOffset.animateTo(
+                        sheetHeightPx(),
+                        tween(250, easing = FastOutSlowInEasing),
+                    )
+                    currentOnDismiss()
+                } else {
+                    sheetDragOffset.animateTo(
+                        0f,
+                        spring(
+                            dampingRatio = Spring.DampingRatioNoBouncy,
+                            stiffness = Spring.StiffnessMediumLow,
+                        ),
+                    )
+                }
+            }
+        }
+
+        // Drag-to-dismiss is handle-only; the sheet body stays scrollable as normal.
 
         Box(
             modifier = Modifier
@@ -144,6 +214,7 @@ fun AssistantOverlay(
                     .widthIn(max = SheetMaxWidth)
                     .fillMaxWidth()
                     .fillMaxHeight(sheetFraction)
+                    .offset { IntOffset(0, sheetDragOffset.value.roundToInt()) }
                     .background(palette.sheetSurface, SheetShape)
                     .windowInsetsPadding(WindowInsets.navigationBars)
                     .clickable(
@@ -154,13 +225,17 @@ fun AssistantOverlay(
                     ),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                DragHandle()
+                DragHandle(
+                    onDrag = { delta -> pullSheet(delta) },
+                    onDragEnd = { settleSheetDrag(0f) },
+                )
 
                 if (uiState.showSuggestionGrid) {
                     // Temporary testing shortcuts — will be removed later.
+                    // todo: remove once testing is done
                     SuggestionGrid(
                         onSuggestionClick = onSubmit,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 0.dp),
                     )
                     Column(
                         modifier = Modifier.fillMaxWidth().weight(1f),
@@ -274,13 +349,25 @@ private fun AssistantError.message(): String = when (this) {
 }
 
 @Composable
-private fun DragHandle() {
+private fun DragHandle(onDrag: (Float) -> Unit, onDragEnd: () -> Unit) {
     Box(
         modifier = Modifier
-            .padding(vertical = 10.dp)
-            .size(width = 36.dp, height = 4.dp)
-            .background(AssistantTheme.palette.textSecondary.copy(alpha = 0.3f), CircleShape)
-    )
+            .fillMaxWidth()
+            .pointerInput(Unit) {
+                detectVerticalDragGestures(
+                    onVerticalDrag = { _, dragAmount -> onDrag(dragAmount) },
+                    onDragEnd = onDragEnd,
+                )
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            modifier = Modifier
+                .padding(vertical = 10.dp)
+                .size(width = 36.dp, height = 4.dp)
+                .background(AssistantTheme.palette.textSecondary.copy(alpha = 0.3f), CircleShape)
+        )
+    }
 }
 
 @Composable
@@ -357,8 +444,11 @@ fun AssistantOverlayConversationPreview() {
             uiState = AssistantUiState(
                 state = AssistantState.DisplayingResult,
                 conversation = listOf(
-                    ConversationItem.UserQuery(id = 1L, text = "Hello, Karen! What can you do?"),
-                    ConversationItem.AssistantText(id = 2L, text = "I can help you manage your tasks, answer questions, and control smart devices around your home.")
+                    ConversationItem.UserQuery(id = 1L, text = "Hello! What can you do?"),
+                    ConversationItem.AssistantText(id = 2L, text = "I can help you **bold your text**, `write code`, and _write italics_.\n\n" +
+                            "| I | can | also |\n" +
+                            "|---|---|---|\n" +
+                            "| write | a | table |")
                 )
             ),
             onMicClick = {},
