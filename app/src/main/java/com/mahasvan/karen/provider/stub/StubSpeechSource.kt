@@ -4,6 +4,7 @@ import com.mahasvan.karen.assistant.SpeechSource
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Canned utterances standing in for a real recognizer. A real implementation wraps the
@@ -15,12 +16,12 @@ class StubSpeechSource : SpeechSource {
         val utterance = STUB_UTTERANCES.random()
         val spoken = StringBuilder()
         utterance.split(" ").forEach { word ->
-            delay(260)
+            delay(260.milliseconds)
             if (spoken.isNotEmpty()) spoken.append(' ')
             spoken.append(word)
             emit(spoken.toString())
         }
-        delay(400)
+        delay(400.milliseconds)
     }
 
     private companion object {
