@@ -56,7 +56,7 @@ private fun Message.text(): String =
  * `automaticToolCalling = on`: the runtime invokes the matching `@Tool` method and
  * feeds its return value back without the caller driving the loop.
  * `sendMessageAsync`'s flow emits only model text, so tool-produced cards are
- * queued in [pendingCards] and emitted after the text stream completes.
+ * queued in [completedTools] and emitted after the text stream completes.
  *
  * The [Conversation] owns chat history. [retry] replays the last prompt; a failed
  * turn may leave a dangling user message, so a retry can produce a duplicate user
@@ -75,8 +75,9 @@ class TensorAssistantBackend(
 
     /**
      * Results from tool calls during the current turn, drained by [respond] after
-     * the text stream completes. Thread-safe: the runtime may invoke tool methods
-     * on a different thread than the flow collector.
+     * the text stream completes. Each entry is the full [ToolResult] — card if the
+     * tool produced one, message either way. Thread-safe: the runtime may invoke
+     * tool methods on a different thread than the flow collector.
      */
     private val completedTools = ConcurrentLinkedQueue<ToolResult>()
 
@@ -255,12 +256,19 @@ class TensorAssistantBackend(
      * Each method name converts camelCase → snake_case for the model (`setAlarm` →
      * `set_alarm`). Methods receive typed params, build the arguments map, and
      * delegate to [ToolRegistry.tool] + [Tool.execute][com.mahasvan.karen.tools.Tool.execute],
-     * which validates, fires the intent, and returns a result with an optional card.
-     * The card is queued in [pendingCards] for [respond] to emit after the text stream.
+     * which validates, fires the intent, and returns a [ToolResult]. The full result
+     * is queued in [completedTools] for [respond] to emit after the text stream.
      *
-     * Methods return `status: "success" | "error"` rather than throwing: a thrown
-     * exception aborts the turn, while a returned error is fed back to the model so
-     * it can apologise or retry with corrected arguments.
+     * The method's return value (a `Map<String, String>`) is what LiteRT-LM
+     * serializes back to the model as the tool response — a simple
+     * `{"status": "success"}` or `{"status": "error", "message": "..."}`. It
+     * cannot return [ToolResult] directly because the model would see the internal
+     * `card` field (a Compose UI type) in its JSON context. The return value goes
+     * to the model; the queued side effect goes to the UI.
+     *
+     * Methods return an error status rather than throwing: a thrown exception
+     * aborts the turn, while a returned error is fed back to the model so it can
+     * apologise or retry with corrected arguments.
      */
     @Suppress("unused") // @Tool methods are called via reflection by LiteRT-LM
     class AssistantToolSet(
@@ -312,8 +320,9 @@ class TensorAssistantBackend(
         private fun execute(toolName: String, arguments: Map<String, String>): Map<String, String> {
             val tool = ToolRegistry.tool(toolName)
                 ?: return mapOf("status" to "error", "message" to "Unknown tool: $toolName")
-            // The tool validates, fires the intent, and returns a result with an optional
-            // card. The result is queued for respond() to emit after the text stream.
+            // The tool validates, fires the intent, and returns a ToolResult. The full
+            // result is queued for the UI; the return value is the simple status the
+            // model sees (see class docstring for why these are separate).
             val result = tool.execute(context, arguments)
             completedTools.add(result)
             return if (result.success) {
