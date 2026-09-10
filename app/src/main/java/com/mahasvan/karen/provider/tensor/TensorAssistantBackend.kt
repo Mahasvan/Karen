@@ -22,8 +22,8 @@ import com.google.ai.edge.litertlm.tool
 import com.mahasvan.karen.assistant.AssistantBackend
 import com.mahasvan.karen.assistant.AssistantReply
 import com.mahasvan.karen.assistant.ModelUnavailableException
-import com.mahasvan.karen.tools.ToolCard
 import com.mahasvan.karen.tools.ToolRegistry
+import com.mahasvan.karen.tools.ToolResult
 import com.mahasvan.karen.tools.calendar.CALENDAR_EVENT_TOOL
 import com.mahasvan.karen.tools.clock.ALARM_TOOL
 import com.mahasvan.karen.tools.clock.TIMER_TOOL
@@ -74,22 +74,22 @@ class TensorAssistantBackend(
     private var turnCount = 0
 
     /**
-     * Cards queued by tool calls during the current turn, drained by [respond] after
+     * Results from tool calls during the current turn, drained by [respond] after
      * the text stream completes. Thread-safe: the runtime may invoke tool methods
      * on a different thread than the flow collector.
      */
-    private val pendingCards = ConcurrentLinkedQueue<ToolCard>()
+    private val completedTools = ConcurrentLinkedQueue<ToolResult>()
 
     override fun respond(prompt: String): Flow<AssistantReply> = flow {
         ensureLoaded()
         lastPrompt = prompt
-        pendingCards.clear()
+        completedTools.clear()
         val responseId = "tensor-${turnCount++}"
         val accumulated = StringBuilder()
-        // LiteRT-LM streams token deltas; accumulate into the growing reply so the UI's
-        // appendOrUpdateText replaces one bubble instead of one-per-token. Tool calls happen
-        // during this collection (automaticToolCalling = on) and queue cards into
-        // pendingCards; they are emitted after the text completes.
+
+        // LiteRT-LM streams token deltas; the UI's appendOrUpdateText replaces the bubble.
+        // Tool calls happen during this collection (automaticToolCalling = on)
+        // and queue results into completedTools; they are emitted after the text completes.
         conversation!!
             .sendMessageAsync(Message.user(prompt))
             .collect { message ->
@@ -98,18 +98,26 @@ class TensorAssistantBackend(
                 accumulated.append(text)
                 emit(AssistantReply.Text(accumulated.toString(), id = responseId))
             }
-        // Drain any cards the tools produced during this turn.
-        var cardEmitted = false
+
+        // Drain tool results. Cards are emitted as cards; card-less tools (e.g. dial)
+        // fall back to their message as text so the user sees something.
+        var toolFired = false
+        val toolMessages = StringBuilder()
         while (true) {
-            val card = pendingCards.poll() ?: break
-            emit(AssistantReply.Card(card))
-            cardEmitted = true
+            val result = completedTools.poll() ?: break
+            toolFired = true
+            result.card?.let { emit(AssistantReply.Card(it)) }
+            if (result.card == null) {
+                if (toolMessages.isNotEmpty()) toolMessages.append(' ')
+                toolMessages.append(result.message)
+            }
+        }
+        if (accumulated.isEmpty() && toolMessages.isNotEmpty()) {
+            emit(AssistantReply.Text(toolMessages.toString(), id = responseId))
         }
 
-        // The model doesn't advertise function calling (functionCalling=false), so it
-        // sometimes emits a tool call with no surrounding text. sendMessageAsync's flow
-        // emits only model text, so such a turn produces nothing visible.
-        if (accumulated.isEmpty() && !cardEmitted) {
+        // No text and no tools fired — the model emitted nothing useful.
+        if (accumulated.isEmpty() && !toolFired) {
             emit(AssistantReply.Text("I didn't catch that. Could you rephrase?", id = responseId))
         }
     }.flowOn(Dispatchers.IO)
@@ -162,7 +170,7 @@ class TensorAssistantBackend(
                     // automaticToolCalling defaults on: the runtime invokes the matching
                     // @Tool method and feeds the result back without the caller driving the
                     // loop. sendMessageAsync's flow still emits only model text.
-                    tools = listOf(tool(AssistantToolSet(context, pendingCards))),
+                    tools = listOf(tool(AssistantToolSet(context, completedTools))),
                 ),
             )
             engine = newEngine
@@ -257,7 +265,7 @@ class TensorAssistantBackend(
     @Suppress("unused") // @Tool methods are called via reflection by LiteRT-LM
     class AssistantToolSet(
         private val context: Context,
-        private val pendingCards: ConcurrentLinkedQueue<ToolCard>,
+        private val completedTools: ConcurrentLinkedQueue<ToolResult>,
     ) : ToolSet {
 
         @Tool(description = "Set an alarm at a specific time of day on the user's device.")
@@ -305,9 +313,9 @@ class TensorAssistantBackend(
             val tool = ToolRegistry.tool(toolName)
                 ?: return mapOf("status" to "error", "message" to "Unknown tool: $toolName")
             // The tool validates, fires the intent, and returns a result with an optional
-            // card. The card is queued for respond() to emit after the text stream.
+            // card. The result is queued for respond() to emit after the text stream.
             val result = tool.execute(context, arguments)
-            result.card?.let { pendingCards.add(it) }
+            completedTools.add(result)
             return if (result.success) {
                 mapOf("status" to "success")
             } else {
