@@ -200,22 +200,32 @@ class TensorAssistantBackend(
         val responseId = "tensor-${turnCount++}"
         val accumulated = StringBuilder()
 
+        Log.d(TAG, "respond: sending prompt='$prompt', conversation alive=${conversation?.isAlive}")
+
         // LiteRT-LM streams token deltas; the UI's appendOrUpdateText replaces the bubble.
         // Tool calls happen during this collection (automaticToolCalling = on)
         // and queue results into completedTools; they are emitted after the text completes.
-        conversation!!
-            .sendMessageAsync(Message.user(prompt))
-            .collect { message ->
-                val text = message.text()
-                Log.d(
-                    TAG,
-                    "Message: text='$text', toolCalls=${message.toolCalls.size}, " +
-                        "contents=${message.contents.contents.map { it::class.simpleName }}",
-                )
-                if (text.isEmpty()) return@collect
-                accumulated.append(text)
-                emit(AssistantReply.Text(accumulated.toString(), id = responseId))
-            }
+        try {
+            conversation!!
+                .sendMessageAsync(Message.user(prompt))
+                .collect { message ->
+                    val text = message.text()
+                    Log.d(
+                        TAG,
+                        "Message: text='$text', toolCalls=${message.toolCalls.size}, " +
+                            "contents=${message.contents.contents.map { it::class.simpleName }}",
+                    )
+                    if (text.isEmpty()) return@collect
+                    accumulated.append(text)
+                    emit(AssistantReply.Text(accumulated.toString(), id = responseId))
+                }
+        } catch (e: Exception) {
+            Log.e(TAG, "sendMessageAsync threw", e)
+            emit(AssistantReply.Text("Error: ${e.message ?: "unknown"}", id = responseId))
+            return@flow
+        }
+
+        Log.d(TAG, "Flow complete: accumulated=${accumulated.length} chars, tools=${completedTools.size}")
 
         // Drain tool results. Cards are emitted as cards; card-less tools (e.g. dial)
         // fall back to their message as text so the user sees something.
@@ -290,20 +300,14 @@ class TensorAssistantBackend(
      */
     private fun buildSystemInstruction(): Contents {
         val now = LocalDateTime.now()
+        val curDateTimeString = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"))
+        val dayOfWeekString = now.format(DateTimeFormatter.ofPattern("EEEE"))
         return Contents.of(
-            "You are a helpful, concise assistant. Additionally, you have capabilities that can control the device's clock, " +
-                    "calendar, and dialer through function calls.\n" +
-                    "Current date and time: ${now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"))} " +
-                    "(${now.format(DateTimeFormatter.ofPattern("EEEE"))}).\n" +
-                    "You can use the provided tools when the user asks to set alarms, start timers, " +
-                    "create calendar events, or place calls. " +
-                    "Android's clock API is write-only: you cannot list existing alarms or " +
-                    "timers. Never invent alarms or timers you did not set.\n" +
-                    "For sensitive actions like placing a call, confirm with the user first " +
-                    "(e.g. \"Should I call 555-0134?\") and wait for their reply before " +
-                    "calling the tool. For non-sensitive actions like setting alarms, " +
-                    "starting timers, and creating calendar events, call the tool directly " +
-                    "without asking."
+            listOf(
+                "You are a helpful, concise assistant. You can control the device's clock, " +
+                        "calendar, and dialer through function calls.",
+                "Current date and time: $curDateTimeString ($dayOfWeekString).",
+            ).map { Content.Text(it) }
         )
     }
 
@@ -361,8 +365,8 @@ class TensorAssistantBackend(
         @Tool(description = "Add an event to the user's calendar.")
         fun createCalendarEvent(
             @ToolParam(description = "Title of the event.") title: String,
-            @ToolParam(description = "Start time in the format YYYY-MM-DDTHH:MM:SS.") startTime: String,
-            @ToolParam(description = "End time in the format YYYY-MM-DDTHH:MM:SS. Use start time plus one hour if not specified.") endTime: String,
+            @ToolParam(description = "Start time in the format YYYY-MM-DDTHH:MM:SS. Defaults to current time if not specified.") startTime: String,
+            @ToolParam(description = "End time in the format YYYY-MM-DDTHH:MM:SS. Defaults to start time plus one hour if not specified.") endTime: String,
         ): Map<String, String> = execute(
             CALENDAR_EVENT_TOOL,
             mapOf(
