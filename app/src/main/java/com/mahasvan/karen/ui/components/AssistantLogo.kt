@@ -95,3 +95,41 @@ private fun LogoCanvas(
         }
     }
 }
+
+/**
+ * The "thinking" indicator: four brand-coloured dots pulsing in sequence while the model
+ * generates a response. Shown in the assistant response position (left-aligned, after the
+ * avatar) so the transition to streaming text is seamless — the avatar stays put and the
+ * dots are replaced by the first text chunk.
+ *
+ * Each dot scales between 0.4 and 1.0 with a staggered phase, matching the classic Google
+ * Assistant thinking animation.
+ */
+@Composable
+fun ThinkingDots(modifier: Modifier = Modifier, dotSize: Dp = 8.dp) {
+    val colors = AssistantTheme.brandColors
+    val transition = rememberInfiniteTransition(label = "thinking")
+    val scales = (0..3).map { index ->
+        transition.animateFloat(
+            initialValue = 0.4f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(600, delayMillis = index * 150, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+            label = "thinking-dot-$index",
+        )
+    }
+    Canvas(modifier.size(width = 50.dp, height = dotSize)) {
+        val spacing = size.width / 4f
+        val baseRadius = dotSize.toPx() / 2f
+        scales.forEachIndexed { index, scale ->
+            val cx = spacing * index + spacing / 2f
+            drawCircle(
+                color = colors[index % colors.size],
+                radius = baseRadius * scale.value,
+                center = Offset(cx, size.height / 2f),
+            )
+        }
+    }
+}

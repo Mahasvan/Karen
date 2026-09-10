@@ -1,21 +1,19 @@
 package com.mahasvan.karen.assistant
 
+import android.app.Application
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import com.mahasvan.karen.provider.stub.StubAssistantBackend
 import com.mahasvan.karen.provider.stub.StubSpeechSource
-import com.mahasvan.karen.tools.ToolAction
-import com.mahasvan.karen.tools.ToolCard
+import com.mahasvan.karen.provider.tensor.TensorAssistantBackend
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -26,11 +24,6 @@ class AssistantViewModel(
 
     private val _uiState = MutableStateFlow(AssistantUiState())
     val uiState: StateFlow<AssistantUiState> = _uiState.asStateFlow()
-
-    private val _actions = Channel<ToolAction>(Channel.BUFFERED)
-
-    /** Consumed once by the activity, which hands each action to the platform. */
-    val actions = _actions.receiveAsFlow()
 
     private var nextId = 0L
     private var listenJob: Job? = null
@@ -63,31 +56,6 @@ class AssistantViewModel(
         runTurn(replies)
     }
 
-    /** Commits the card the user just confirmed to the relevant system app. */
-    fun confirmCard(id: Long) {
-        val card = (_uiState.value.conversation
-            .firstOrNull { it.id == id } as? ConversationItem.AssistantCard)?.card ?: return
-        viewModelScope.launch { _actions.send(card.action()) }
-    }
-
-    /**
-     * Replaces a card in place after its own tool edited it. The ViewModel stays unaware of
-     * what changed, so a new tool with editable card state needs no change here.
-     */
-    fun updateCard(id: Long, card: ToolCard) {
-        _uiState.update { state ->
-            state.copy(
-                conversation = state.conversation.map { item ->
-                    if (item is ConversationItem.AssistantCard && item.id == id) {
-                        item.copy(card = card)
-                    } else {
-                        item
-                    }
-                }
-            )
-        }
-    }
-
     private fun beginTurn(query: String) {
         _uiState.update {
             it.copy(
@@ -107,7 +75,6 @@ class AssistantViewModel(
             try {
                 replies.collect { reply ->
                     when (reply) {
-                        is AssistantReply.Handoff -> _actions.send(reply.action)
                         is AssistantReply.Text -> appendOrUpdateText(reply)
                         is AssistantReply.Card ->
                             append(ConversationItem.AssistantCard(nextId++, reply.card))
@@ -202,7 +169,13 @@ class AssistantViewModel(
 
     companion object {
         val Factory = viewModelFactory {
-            initializer { AssistantViewModel(StubAssistantBackend(), StubSpeechSource()) }
+            initializer {
+                val app = this[APPLICATION_KEY] as Application
+                AssistantViewModel(
+                    TensorAssistantBackend(app, TensorAssistantBackend.defaultModelFile(app)),
+                    StubSpeechSource(),
+                )
+            }
         }
     }
 }

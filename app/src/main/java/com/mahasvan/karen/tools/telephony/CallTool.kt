@@ -1,5 +1,6 @@
 package com.mahasvan.karen.tools.telephony
 
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -7,8 +8,8 @@ import android.provider.ContactsContract
 import androidx.compose.runtime.Immutable
 import androidx.core.net.toUri
 import com.mahasvan.karen.tools.Tool
-import com.mahasvan.karen.tools.ToolAction
 import com.mahasvan.karen.tools.ToolParameter
+import com.mahasvan.karen.tools.ToolResult
 
 const val CALL_TOOL = "dial"
 
@@ -27,23 +28,11 @@ object CallTool : Tool {
         ToolParameter("target", "A phone number or a contact name.", required = true),
     )
 
-    override fun parse(arguments: Map<String, String>): ToolAction? {
-        val target = arguments["target"]?.trim()?.takeIf { it.isNotEmpty() } ?: return null
-        return CallAction(target)
-    }
-}
-
-/**
- * Dialling uses ACTION_DIAL rather than ACTION_CALL on purpose: it needs no runtime
- * permission and leaves the final press to the user. That matters more now that the target
- * can originate from a model — a prompt-injected model still cannot place a call.
- */
-@Immutable
-data class CallAction(val target: String) : ToolAction {
-
-    override fun intent(context: Context): Intent {
+    override fun execute(context: Context, arguments: Map<String, String>): ToolResult {
+        val target = arguments["target"]?.trim()?.takeIf { it.isNotEmpty() }
+            ?: return ToolResult(false, "Invalid target")
         val digits = target.filter { it.isDigit() || it == '+' }
-        return if (digits.length >= MIN_DIALABLE_DIGITS) {
+        val intent = if (digits.length >= MIN_DIALABLE_DIGITS) {
             // Rebuilt from the filtered digits, never from the raw model string, so nothing
             // else can ride along in the tel: URI.
             Intent(Intent.ACTION_DIAL, "tel:$digits".toUri())
@@ -54,6 +43,13 @@ data class CallAction(val target: String) : ToolAction {
                     Uri.encode(target),
                 )
             }
+        }
+        return try {
+            context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            // Dial doesn't produce a card — the dialer UI is the visual confirmation.
+            ToolResult(true, "Opening dialer for $target")
+        } catch (_: ActivityNotFoundException) {
+            ToolResult(false, "No dialer app available")
         }
     }
 }

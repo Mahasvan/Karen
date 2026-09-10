@@ -6,7 +6,7 @@ import com.mahasvan.karen.tools.clock.TimerTool
 import com.mahasvan.karen.tools.telephony.CallTool
 
 /**
- * The tools Karen exposes. This list is the single registration point: a new capability is
+ * The tools the app exposes. This list is the single registration point: a new capability is
  * a new directory under `tools/` plus one entry here.
  *
  * A backend advertises [tools] to its model and routes the model's chosen function name

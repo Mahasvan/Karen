@@ -1,4 +1,4 @@
-# Karen — Google Assistant Clone: Design Specification
+# Assistant — Google Assistant Clone: Design Specification
 
 Derived from the Figma community mockup exports:
 
@@ -68,11 +68,11 @@ lighter tone of `accent1`:
 | 4 | `system_accent1_400` | `system_accent1_400` |
 
 Exposed as `LocalBrandColors`; every component reads the list by index, so the ordering above is
-the contract. A Material You Karen therefore reads as **tonal** rather than four-colour — that is
+the contract. A Material You build therefore reads as **tonal** rather than four-colour — that is
 expected, not a bug.
 
 **Fallback palette.** The original Google brand colours, taken verbatim from the SVG fills, remain
-as the non-dynamic fallback (`KarenTheme(dynamicColor = false)`) and for previews:
+as the non-dynamic fallback (`AppTheme(dynamicColor = false)`) and for previews:
 
 | Token | Hex |
 |---|---|
@@ -251,7 +251,7 @@ the brand colour at **15 % opacity** carrying a saturated glyph, with a `12 sp` 
 
 ### 4.8 Rich cards
 
-Karen supports **four** capabilities and nothing else: alarms, timers, calendar events, and
+The app supports **four** capabilities and nothing else: alarms, timers, calendar events, and
 placing a call. The mockup's calling and music-player cards are **not built** — see §4.9.
 
 All three cards share one `ActionCard` shape rather than each being bespoke:
@@ -280,7 +280,7 @@ The mockup's **calling card** (Frame F: `270 × 333 dp`, dark gradient, 3 × 2 d
 end-call button) and **music selector card** (Frame H: provider rows with brand avatars) are
 deliberately **out of scope**.
 
-There is no in-app calling UI at all. A call request is a *handoff*: Karen emits an
+There is no in-app calling UI at all. A call request is a *handoff*: the app emits an
 `AssistantAction.Dial` and the native dialer takes over — see §7.2.
 
 Also dropped from the suggestion grid: weather, navigation, translate, reminders and forecast.
@@ -382,7 +382,7 @@ interface AssistantBackend {
 
 ### 7.2 Platform handoff
 
-Karen never rings an alarm or places a call itself. `AssistantAction` values travel from the
+The app never rings an alarm or places a call itself. `ToolAction` values travel from the
 ViewModel to the activity over a one-shot `Channel`, and `Context.perform(action)` turns each
 into a system intent:
 

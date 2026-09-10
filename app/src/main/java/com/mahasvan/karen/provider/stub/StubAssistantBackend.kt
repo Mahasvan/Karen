@@ -1,5 +1,6 @@
 package com.mahasvan.karen.provider.stub
 
+import android.content.Context
 import com.mahasvan.karen.assistant.AssistantBackend
 import com.mahasvan.karen.assistant.AssistantReply
 import com.mahasvan.karen.tools.ToolRegistry
@@ -19,11 +20,14 @@ import kotlinx.coroutines.flow.flow
  * Keyword matching standing in for real language understanding.
  *
  * The keywords play the role of a model's function call: each branch picks a tool name and
- * builds the arguments map, then hands both to [ToolRegistry] exactly as a real backend
- * would. Everything up to the [route] call is throwaway; everything from it on is the shape
- * a LiteRT or OpenAI-compatible backend keeps.
+ * builds the arguments map, then hands both to [ToolRegistry] which looks up the tool and
+ * calls [Tool.execute][com.mahasvan.karen.tools.Tool.execute] — exactly as a real backend
+ * would. The tool fires the intent immediately and returns a card; this backend emits the
+ * card into the conversation.
  */
-class StubAssistantBackend : AssistantBackend {
+class StubAssistantBackend(
+    private val context: Context,
+) : AssistantBackend {
 
     /**
      * Committed turns, oldest first. Keyword matching never reads this; the list exists so
@@ -133,21 +137,16 @@ class StubAssistantBackend : AssistantBackend {
     }
 
     /**
-     * The half of this class a real backend keeps: look the tool up, parse the arguments,
-     * then emit whichever reply the tool wants — a confirmation card, or a straight handoff.
+     * The half of this class a real backend keeps: look the tool up, execute it (which fires
+     * the intent and returns a card), and emit the card if the tool produced one.
      */
     private suspend fun FlowCollector<AssistantReply>.route(
         toolName: String,
         arguments: Map<String, String>,
     ) {
         val tool = ToolRegistry.tool(toolName) ?: return
-        val action = tool.parse(arguments) ?: return
-        val card = tool.card(action)
-        if (card != null) {
-            emit(AssistantReply.Card(card))
-        } else {
-            emit(AssistantReply.Handoff(action))
-        }
+        val result = tool.execute(context, arguments)
+        result.card?.let { emit(AssistantReply.Card(it)) }
     }
 
     private sealed interface HistoryEntry {

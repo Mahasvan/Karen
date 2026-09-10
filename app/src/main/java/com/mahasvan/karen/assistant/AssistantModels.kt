@@ -1,7 +1,6 @@
 package com.mahasvan.karen.assistant
 
 import androidx.compose.runtime.Immutable
-import com.mahasvan.karen.tools.ToolAction
 import com.mahasvan.karen.tools.ToolCard
 
 @Immutable
@@ -15,12 +14,9 @@ sealed interface AssistantReply {
     @Immutable
     data class Text(val text: String, val id: String? = null) : AssistantReply
 
+    /** An informational card shown in the conversation after a tool fires. */
     @Immutable
     data class Card(val card: ToolCard) : AssistantReply
-
-    /** Handed straight to the platform without waiting for the user to confirm. */
-    @Immutable
-    data class Handoff(val action: ToolAction) : AssistantReply
 }
 
 @Immutable

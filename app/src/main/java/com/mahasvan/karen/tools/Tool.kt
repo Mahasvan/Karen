@@ -1,24 +1,23 @@
 package com.mahasvan.karen.tools
 
 import android.content.Context
-import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 
 /**
  * One capability the assistant can invoke: setting an alarm, starting a timer, adding a
  * calendar event, placing a call. A tool owns everything about itself — the schema it
- * advertises to a model, how it turns that model's arguments into an action, the system
- * intent that fulfils the action, and how its card renders.
+ * advertises to a model, how it turns that model's arguments into a system intent, firing
+ * that intent, and how its card renders.
+ *
+ * Calling [execute] fires the system intent immediately and returns a [ToolResult] with an
+ * optional informational card. There is no confirmation step: the card is a visual record
+ * of what happened, not a gate. Sensitive actions (e.g. calling) are confirmed by the model
+ * through conversation before it calls the tool — the system prompt governs that, not the
+ * app's UI.
  *
  * Adding a capability means adding a directory under `tools/` and one line in
  * [ToolRegistry]. Nothing else in the app changes.
- *
- * These types are deliberately **not** sealed. An open set of tools and a compiler-checked
- * exhaustive `when` are mutually exclusive, and independent extension is the point here, so
- * dispatch is a registry lookup instead. The cost is that a malformed [ToolCard]/[Tool]
- * pairing fails at runtime rather than at compile time; [ToolRegistry.tool] is the only
- * place that can happen.
  */
 interface Tool {
 
@@ -31,28 +30,23 @@ interface Tool {
     val parameters: List<ToolParameter>
 
     /**
-     * Builds an action from the arguments a model produced, or null when they are unusable.
+     * Validates the model-produced arguments, fires the system intent, and returns a result
+     * with an optional card for display. The intent has already fired by the time this
+     * returns — there is no confirmation step.
      *
      * Model output is untrusted input — a prompt-injected model can propose any arguments it
      * likes — so implementations must validate here rather than at the call site.
      */
-    fun parse(arguments: Map<String, String>): ToolAction?
-
-    /**
-     * The confirmation card for [action], or null when the action should go straight to the
-     * platform. The tool decides whether its own capability warrants a confirmation step, so
-     * backends never need to know which capabilities are confirmable.
-     */
-    fun card(action: ToolAction): ToolCard? = null
+    fun execute(context: Context, arguments: Map<String, String>): ToolResult
 
     /**
      * Renders a card this tool produced. [card] is always one of this tool's own types, so
      * the cast inside is safe; [ToolRegistry] guarantees the pairing.
      *
-     * Tools that only hand off and never produce a card need not override this.
+     * Tools that don't produce a card need not override this.
      */
     @Composable
-    fun CardContent(card: ToolCard, onConfirm: () -> Unit, onUpdate: (ToolCard) -> Unit) {
+    fun CardContent(card: ToolCard) {
     }
 }
 
@@ -63,17 +57,20 @@ data class ToolParameter(
     val required: Boolean,
 )
 
-/** Work that leaves the app. Karen builds the intent; the platform owns what happens next. */
-interface ToolAction {
-    fun intent(context: Context): Intent
-}
+/**
+ * The outcome of calling [Tool.execute]. [card] is present only when the tool succeeded and
+ * has something to show in the conversation; it is informational, not confirmational.
+ */
+@Immutable
+data class ToolResult(
+    val success: Boolean,
+    val message: String,
+    val card: ToolCard? = null,
+)
 
-/** A confirmable result rendered into the conversation. */
+/** An informational card rendered into the conversation after a tool fires. */
 interface ToolCard {
 
     /** Which [Tool] produced this card, and therefore which one renders it. */
     val toolName: String
-
-    /** The action committed when the user confirms the card. */
-    fun action(): ToolAction
 }

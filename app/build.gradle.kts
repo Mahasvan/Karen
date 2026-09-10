@@ -38,6 +38,13 @@ android {
     buildFeatures {
         compose = true
     }
+    packaging {
+        jniLibs {
+            // LiteRT dlopens libLiteRtDispatch_*.so by path out of nativeLibraryDir, so it
+            // must be a real extracted file rather than a compressed APK entry.
+            useLegacyPackaging = true
+        }
+    }
 }
 
 kotlin {
@@ -58,6 +65,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.litertlm.android)
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)

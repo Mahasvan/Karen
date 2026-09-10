@@ -4,6 +4,8 @@
 
     <uses-permission android:name="com.android.alarm.permission.SET_ALARM" />
 
+    <uses-feature android:name="android.hardware.npu" android:required="false" />
+
     <queries>
         <intent>
             <action android:name="android.intent.action.DIAL" />
@@ -34,12 +36,23 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Karen">
+        android:theme="@style/Theme.App">
+
+        <!-- Platform Edge TPU libraries the dispatch backend dlopens. Apps targeting SDK 31+
+             cannot load non-NDK system libraries without declaring them. -->
+        <uses-native-library android:name="libedgetpu_litert.so"        android:required="false" />
+        <uses-native-library android:name="libedgetpu_tachyon.google.so" android:required="false" />
+        <uses-native-library android:name="libedgetpu_client.google.so"  android:required="false" />
+        <uses-native-library android:name="libedgetpu_util.so"           android:required="false" />
+        <uses-native-library android:name="libvndksupport.so"            android:required="false" />
+        <uses-native-library android:name="libOpenCL.so"                 android:required="false" />
+        <uses-native-library android:name="libcdsprpc.so"                android:required="false" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/Theme.Karen"
+            android:theme="@style/Theme.App"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

@@ -53,7 +53,7 @@ import com.mahasvan.karen.R
 import com.mahasvan.karen.assistant.AssistantError
 import com.mahasvan.karen.assistant.AssistantState
 import com.mahasvan.karen.assistant.AssistantUiState
-import com.mahasvan.karen.tools.ToolCard
+import com.mahasvan.karen.assistant.ConversationItem
 import com.mahasvan.karen.ui.components.AssistantHeroLogo
 import com.mahasvan.karen.ui.components.BottomActionBar
 import com.mahasvan.karen.ui.components.ConversationStream
@@ -82,8 +82,6 @@ fun AssistantOverlay(
     onMicClick: () -> Unit,
     onKeyboardClick: () -> Unit,
     onSubmit: (String) -> Unit,
-    onConfirmCard: (Long) -> Unit,
-    onUpdateCard: (Long, ToolCard) -> Unit,
     onRetry: () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
@@ -150,11 +148,12 @@ fun AssistantOverlay(
                         AssistantHeroLogo(animate = uiState.state != AssistantState.Listening)
                     }
                 } else {
+                    val isThinking = uiState.state == AssistantState.Processing &&
+                        uiState.conversation.lastOrNull() is ConversationItem.UserQuery
                     ConversationStream(
                         conversation = uiState.conversation,
                         partialTranscript = uiState.partialTranscript,
-                        onConfirmCard = onConfirmCard,
-                        onUpdateCard = onUpdateCard,
+                        isThinking = isThinking,
                         modifier = Modifier
                             .fillMaxWidth()
                             .weight(1f),
@@ -218,8 +217,12 @@ private fun ErrorRow(error: AssistantError, onRetry: () -> Unit) {
 @Composable
 private fun AssistantError.message(): String = when (this) {
     AssistantError.Network -> stringResource(R.string.error_network)
-    is AssistantError.ModelUnavailable -> stringResource(R.string.error_model_unavailable)
-    is AssistantError.Unknown -> stringResource(R.string.error_unknown)
+    is AssistantError.ModelUnavailable -> detail
+        ?.takeIf { it.isNotBlank() }
+        ?: stringResource(R.string.error_model_unavailable)
+    is AssistantError.Unknown -> detail
+        ?.takeIf { it.isNotBlank() }
+        ?: stringResource(R.string.error_unknown)
 }
 
 @Composable

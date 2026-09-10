@@ -26,7 +26,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.mahasvan.karen.assistant.ConversationItem
-import com.mahasvan.karen.tools.ToolCard
 import com.mahasvan.karen.tools.ToolRegistry
 import com.mahasvan.karen.ui.theme.AssistantTheme
 
@@ -37,8 +36,7 @@ private val AvatarGutter = 40.dp
 fun ConversationStream(
     conversation: List<ConversationItem>,
     partialTranscript: String,
-    onConfirmCard: (Long) -> Unit,
-    onUpdateCard: (Long, ToolCard) -> Unit,
+    isThinking: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val listState = rememberLazyListState()
@@ -66,11 +64,7 @@ fun ConversationStream(
                         // The registry lookup is the single dispatch point: the card names its
                         // tool, the tool renders its own card. A new tool needs no change here.
                         Box(modifier = Modifier.padding(start = AvatarGutter)) {
-                            ToolRegistry.tool(item.card)?.CardContent(
-                                card = item.card,
-                                onConfirm = { onConfirmCard(item.id) },
-                                onUpdate = { onUpdateCard(item.id, it) },
-                            )
+                            ToolRegistry.tool(item.card)?.CardContent(card = item.card)
                         }
                     }
                 }
@@ -79,6 +73,10 @@ fun ConversationStream(
 
         if (partialTranscript.isNotBlank()) {
             item(key = "partial") { UserBubble(partialTranscript, dimmed = true) }
+        }
+
+        if (isThinking) {
+            item(key = "thinking") { ThinkingRow() }
         }
     }
 }
@@ -127,5 +125,22 @@ private fun AssistantResponse(text: String) {
             style = MaterialTheme.typography.bodyLarge,
             color = AssistantTheme.palette.textPrimary,
         )
+    }
+}
+
+/**
+ * The thinking indicator in the assistant response position: avatar + pulsing dots. The
+ * avatar stays in the same spot as a real response, so the dots-to-text transition is a
+ * seamless swap rather than a layout jump.
+ */
+@Composable
+private fun ThinkingRow() {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        AssistantAvatar()
+        ThinkingDots()
     }
 }
