@@ -60,7 +60,7 @@ fun BottomActionBar(
                 if (lastInputMethod == InputMethod.Voice) onKeyboardClick() else onMicClick()
             },
             size = SecondaryButtonSize,
-            modifier = Modifier.align(Alignment.CenterStart),
+            modifier = Modifier.align(Alignment.CenterEnd).padding(horizontal = 10.dp),
         ) {
             if (lastInputMethod == InputMethod.Voice) {
                 Icon(
