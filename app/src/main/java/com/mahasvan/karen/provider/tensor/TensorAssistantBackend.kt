@@ -151,9 +151,6 @@ class TensorAssistantBackend(
             cacheDir = context.filesDir.absolutePath,
         )
 
-        // Pinned explicitly around engine creation rather than left null ("auto"), and
-        // restored afterwards so the flag stays process-global-neutral.
-        val previous = ExperimentalFlags.enableSpeculativeDecoding
         ExperimentalFlags.enableSpeculativeDecoding = supportsSpeculativeDecoding
         try {
             val newEngine = Engine(engineConfig).also { it.initialize() }
@@ -177,8 +174,6 @@ class TensorAssistantBackend(
                     "Check logcat (tag: litert) for dispatch backend or TPU errors.",
                 e,
             )
-        } finally {
-            ExperimentalFlags.enableSpeculativeDecoding = previous
         }
     }
 
@@ -237,14 +232,14 @@ class TensorAssistantBackend(
                 "timers. Never invent alarms or timers you did not set.\n" +
                 "For sensitive actions like placing a call, confirm with the user first " +
                 "(e.g. \"Should I call 555-0134?\") and wait for their reply before " +
-                "calling the dial tool. For non-sensitive actions like setting alarms, " +
+                "calling the tool. For non-sensitive actions like setting alarms, " +
                 "starting timers, and creating calendar events, call the tool directly " +
                 "without asking."
         )
     }
 
     /** Releases native engine/conversation resources. Safe to call when nothing is loaded. */
-    fun close() {
+    override fun close() {
         conversation?.let { runCatching { it.close() } }
         conversation = null
         engine?.let { runCatching { it.close() } }

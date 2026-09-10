@@ -29,6 +29,11 @@ class AssistantViewModel(
     private var listenJob: Job? = null
     private var turnJob: Job? = null
 
+    override fun onCleared() {
+        super.onCleared()
+        backend.close()
+    }
+
     fun toggleMicrophone() {
         if (_uiState.value.state == AssistantState.Listening) stopListening() else startListening()
     }

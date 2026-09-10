@@ -51,6 +51,10 @@ class StubAssistantBackend(
 
     override fun retry(): Flow<AssistantReply>? = lastPrompt?.let { respond(it) }
 
+    override fun close() {
+        // Nothing to release — the stub holds no native resources.
+    }
+
     private fun produceReplies(prompt: String): Flow<AssistantReply> = flow {
         delay(700)
         val text = prompt.lowercase()

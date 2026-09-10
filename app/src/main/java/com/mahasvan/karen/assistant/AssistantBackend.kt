@@ -39,6 +39,13 @@ interface AssistantBackend {
      * history can guarantee that.
      */
     fun retry(): Flow<AssistantReply>?
+
+    /**
+     * Releases native resources, open connections, or any other heavyweight state. Called
+     * by the ViewModel's [onCleared][androidx.lifecycle.ViewModel.onCleared] when the
+     * ViewModel is destroyed. Safe to call when nothing is loaded.
+     */
+    fun close()
 }
 
 /** The backend's model could not be loaded, resolved, or authenticated against. */
