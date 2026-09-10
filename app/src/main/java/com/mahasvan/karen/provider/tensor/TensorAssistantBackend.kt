@@ -207,6 +207,11 @@ class TensorAssistantBackend(
             .sendMessageAsync(Message.user(prompt))
             .collect { message ->
                 val text = message.text()
+                Log.d(
+                    TAG,
+                    "Message: text='$text', toolCalls=${message.toolCalls.size}, " +
+                        "contents=${message.contents.contents.map { it::class.simpleName }}",
+                )
                 if (text.isEmpty()) return@collect
                 accumulated.append(text)
                 emit(AssistantReply.Text(accumulated.toString(), id = responseId))
@@ -231,6 +236,7 @@ class TensorAssistantBackend(
 
         // No text and no tools fired — the model emitted nothing useful.
         if (accumulated.isEmpty() && !toolFired) {
+            Log.w(TAG, "Failsafe triggered: no text and no tools fired")
             emit(AssistantReply.Text("I didn't catch that. Could you rephrase?", id = responseId))
         }
     }.flowOn(Dispatchers.IO)
@@ -285,11 +291,11 @@ class TensorAssistantBackend(
     private fun buildSystemInstruction(): Contents {
         val now = LocalDateTime.now()
         return Contents.of(
-            "You are a helpful, concise assistant that can control the device's clock, " +
+            "You are a helpful, concise assistant. Additionally, you have capabilities that can control the device's clock, " +
                     "calendar, and dialer through function calls.\n" +
                     "Current date and time: ${now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))} " +
                     "(${now.format(DateTimeFormatter.ofPattern("EEEE"))}).\n" +
-                    "Use the provided tools when the user asks to set alarms, start timers, " +
+                    "You can use the provided tools when the user asks to set alarms, start timers, " +
                     "create calendar events, or place calls. " +
                     "Android's clock API is write-only: you cannot list existing alarms or " +
                     "timers. Never invent alarms or timers you did not set.\n" +
