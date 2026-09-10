@@ -135,7 +135,13 @@ fun AssistantOverlay(
                     .fillMaxWidth()
                     .fillMaxHeight(sheetFraction)
                     .background(palette.sheetSurface, SheetShape)
-                    .windowInsetsPadding(WindowInsets.navigationBars),
+                    .windowInsetsPadding(WindowInsets.navigationBars)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = {}, // Consume taps on the sheet so the scrim's
+                        // dismiss handler doesn't fire when the user taps inside the sheet.
+                    ),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 DragHandle()
