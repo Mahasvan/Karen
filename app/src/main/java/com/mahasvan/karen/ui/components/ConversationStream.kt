@@ -37,6 +37,7 @@ fun ConversationStream(
     conversation: List<ConversationItem>,
     partialTranscript: String,
     isThinking: Boolean,
+    isStreaming: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val listState = rememberLazyListState()
@@ -54,7 +55,7 @@ fun ConversationStream(
         items(conversation, key = { it.id }) { item ->
             when (item) {
                 is ConversationItem.UserQuery -> UserBubble(item.text)
-                is ConversationItem.AssistantText -> AssistantResponse(item.text)
+                is ConversationItem.AssistantText -> AssistantResponse(item.text, isStreaming)
                 is ConversationItem.AssistantCard -> {
                     val visible = rememberOneShotVisibility(item.id)
                     AnimatedVisibility(
@@ -115,19 +116,19 @@ private fun UserBubble(text: String, dimmed: Boolean = false) {
 
 /**
  * Response text shown directly on the surface with no bubble.
+ * Markdown is rendered with a fade-in transition on each token update.
  */
 @Composable
-private fun AssistantResponse(text: String) {
+private fun AssistantResponse(text: String, isStreaming: Boolean) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.Top,
     ) {
         AssistantAvatar()
-        Text(
+        BufferedFadingMarkdownText(
             text = text,
-            style = MaterialTheme.typography.bodyLarge,
-            color = AssistantTheme.palette.textPrimary,
+            inProgress = isStreaming,
         )
     }
 }

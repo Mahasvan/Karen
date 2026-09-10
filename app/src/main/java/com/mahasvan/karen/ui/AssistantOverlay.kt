@@ -164,6 +164,7 @@ fun AssistantOverlay(
                         conversation = uiState.conversation,
                         partialTranscript = uiState.partialTranscript,
                         isThinking = isThinking,
+                        isStreaming = uiState.state == AssistantState.Processing,
                         modifier = Modifier
                             .fillMaxWidth()
                             .weight(1f),
