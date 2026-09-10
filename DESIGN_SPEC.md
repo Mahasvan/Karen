@@ -32,16 +32,16 @@ provided mockups with modern Assistant/Gemini behaviour.
 This is the defining trait of the Assistant UI and the mockups do **not** show it — the Figma
 frames are opaque white for presentation purposes only.
 
-| Property | Value |
-|---|---|
-| Window background | fully transparent (`android:windowIsTranslucent`, `windowBackground = @android:color/transparent`) |
-| Activity | `enableEdgeToEdge()`, no action bar, `windowSoftInputMode=adjustResize` |
-| Scrim | vertical gradient, `Color.Transparent` → `Color.Black @ 0.55α`, top → bottom |
-| Scrim gradient midpoint | ~40 % of screen height; above that it is effectively clear |
-| Sheet occupancy | bottom **50 %** of screen height, growing to a 90 % cap as conversation content accumulates |
-| Sheet corner radius | `28.dp` top-start / top-end, `0.dp` bottom |
-| Dismiss | tap anywhere in the transparent upper region, or swipe the sheet down |
-| Enter transition | `slideInVertically(initialOffsetY = { it })` + `fadeIn`, `300 ms` `FastOutSlowInEasing` |
+| Property                | Value                                                                                              |
+|-------------------------|----------------------------------------------------------------------------------------------------|
+| Window background       | fully transparent (`android:windowIsTranslucent`, `windowBackground = @android:color/transparent`) |
+| Activity                | `enableEdgeToEdge()`, no action bar, `windowSoftInputMode=adjustResize`                            |
+| Scrim                   | vertical gradient, `Color.Transparent` → `Color.Black @ 0.55α`, top → bottom                       |
+| Scrim gradient midpoint | ~40 % of screen height; above that it is effectively clear                                         |
+| Sheet occupancy         | bottom **50 %** of screen height, growing to a 90 % cap as conversation content accumulates        |
+| Sheet corner radius     | `28.dp` top-start / top-end, `0.dp` bottom                                                         |
+| Dismiss                 | tap anywhere in the transparent upper region, or swipe the sheet down                              |
+| Enter transition        | `slideInVertically(initialOffsetY = { it })` + `fadeIn`, `300 ms` `FastOutSlowInEasing`            |
 
 The top half must remain hit-testable-through for dismiss but must not capture scroll gestures
 intended for the sheet.
@@ -60,12 +60,12 @@ Four distinguishable accents drive the logo dots, the voice visualizer, the glow
 suggestion grid. The three system accent families only yield three hues, so the fourth is a
 lighter tone of `accent1`:
 
-| Slot | Light | Dark |
-|---|---|---|
+| Slot                 | Light                | Dark                 |
+|----------------------|----------------------|----------------------|
 | 1 (largest logo dot) | `system_accent1_600` | `system_accent1_200` |
-| 2 | `system_accent3_600` | `system_accent3_200` |
-| 3 | `system_accent2_600` | `system_accent2_200` |
-| 4 | `system_accent1_400` | `system_accent1_400` |
+| 2                    | `system_accent3_600` | `system_accent3_200` |
+| 3                    | `system_accent2_600` | `system_accent2_200` |
+| 4                    | `system_accent1_400` | `system_accent1_400` |
 
 Exposed as `LocalBrandColors`; every component reads the list by index, so the ordering above is
 the contract. A Material You build therefore reads as **tonal** rather than four-colour — that is
@@ -74,12 +74,12 @@ expected, not a bug.
 **Fallback palette.** The original Google brand colours, taken verbatim from the SVG fills, remain
 as the non-dynamic fallback (`AppTheme(dynamicColor = false)`) and for previews:
 
-| Token | Hex |
-|---|---|
-| Google Blue | `#4285F4` |
-| Google Red | `#EA4335` |
+| Token         | Hex       |
+|---------------|-----------|
+| Google Blue   | `#4285F4` |
+| Google Red    | `#EA4335` |
 | Google Yellow | `#FBBC04` |
-| Google Green | `#34A853` |
+| Google Green  | `#34A853` |
 
 Near-duplicate variants in the export (`#4286F5`, `#EA4235`, `#FABD03`) are Figma rounding
 artefacts and collapse onto the four values above.
@@ -88,16 +88,16 @@ artefacts and collapse onto the four values above.
 
 Surfaces derive from the active `ColorScheme` so they follow the wallpaper too. The mapping:
 
-| Token | Material 3 role |
-|---|---|
-| Sheet surface | `surface` |
-| Bubble — assistant | `surfaceContainerHigh` |
-| Bubble — user | `surfaceVariant` |
-| Card surface | `surfaceContainer` |
-| Action button | `surfaceContainerHighest` |
-| Text primary | `onSurface` |
-| Text secondary / action icon tint | `onSurfaceVariant` |
-| Scrim | `scrim` @ 55 % light, 65 % dark |
+| Token                             | Material 3 role                 |
+|-----------------------------------|---------------------------------|
+| Sheet surface                     | `surface`                       |
+| Bubble — assistant                | `surfaceContainerHigh`          |
+| Bubble — user                     | `surfaceVariant`                |
+| Card surface                      | `surfaceContainer`              |
+| Action button                     | `surfaceContainerHighest`       |
+| Text primary                      | `onSurface`                     |
+| Text secondary / action icon tint | `onSurfaceVariant`              |
+| Scrim                             | `scrim` @ 55 % light, 65 % dark |
 
 **Icon-grid backgrounds:** the slot's accent at **15 % opacity** behind a fully saturated glyph.
 
@@ -112,12 +112,12 @@ Surfaces derive from the active `ColorScheme` so they follow the wallpaper too. 
 - Measured ink height in the mockup bubbles is ~50–52 px (~17 dp) ascender-to-descender, which
   corresponds to a **16 sp** body size.
 
-| Role | Size | Weight | Line height |
-|---|---|---|---|
-| Bubble text | 16 sp | Normal | 22 sp |
-| Card title | 18 sp | Medium | 24 sp |
-| Card secondary | 14 sp | Normal | 20 sp |
-| Grid item label | 12 sp | Medium | 16 sp |
+| Role            | Size  | Weight | Line height |
+|-----------------|-------|--------|-------------|
+| Bubble text     | 16 sp | Normal | 22 sp       |
+| Card title      | 18 sp | Medium | 24 sp       |
+| Card secondary  | 14 sp | Normal | 20 sp       |
+| Grid item label | 12 sp | Medium | 16 sp       |
 
 ### 3.4 Shapes
 
@@ -147,12 +147,12 @@ In dp: `x = -1.33`, `y = +1.33`, blur ≈ `5`. Approximate in Compose with
 Appears to the left of every assistant response. Circle radii and centres, relative to the
 avatar's own bounding box (raw px → dp):
 
-| Dot | Colour | Radius px | Radius dp | Centre offset px (x, y) |
-|---|---|---|---|---|
-| Large | `#4285F4` | 39.51 | 13.2 | (0, 0) reference |
-| Medium | `#FBBC04` | 23.22 | 7.7 | (+65, +67) |
-| Small | `#EA4335` | 19.55 | 6.5 | (+65, +19) |
-| Tiny | `#34A853` | 10.59 | 3.5 | (+94, −3) |
+| Dot    | Colour    | Radius px | Radius dp | Centre offset px (x, y) |
+|--------|-----------|-----------|-----------|-------------------------|
+| Large  | `#4285F4` | 39.51     | 13.2      | (0, 0) reference        |
+| Medium | `#FBBC04` | 23.22     | 7.7       | (+65, +67)              |
+| Small  | `#EA4335` | 19.55     | 6.5       | (+65, +19)              |
+| Tiny   | `#34A853` | 10.59     | 3.5       | (+94, −3)               |
 
 Overall avatar footprint ≈ **`40 × 40 dp`** (≈ 120 px). It sits with its blue dot roughly on the
 bubble's vertical centre, `~14 dp` from the sheet's left edge.
@@ -161,12 +161,12 @@ bubble's vertical centre, `~14 dp` from the sheet's left edge.
 
 Frame A (the "blob" resting state):
 
-| Dot | Colour | Radius px | Radius dp |
-|---|---|---|---|
-| Large | `#4285F4` | 75.78 | 25.3 |
-| Medium | `#FBBC04` | 44.53 | 14.8 |
-| Small | `#EA4335` | 37.50 | 12.5 |
-| Tiny | `#34A853` | 20.31 | 6.8 |
+| Dot    | Colour    | Radius px | Radius dp |
+|--------|-----------|-----------|-----------|
+| Large  | `#4285F4` | 75.78     | 25.3      |
+| Medium | `#FBBC04` | 44.53     | 14.8      |
+| Small  | `#EA4335` | 37.50     | 12.5      |
+| Tiny   | `#34A853` | 20.31     | 6.8       |
 
 Hero footprint ≈ **`80 × 80 dp`**, centred horizontally, sitting ~`290 dp` down the frame.
 
@@ -182,12 +182,12 @@ Order left→right: **Blue, Red, Yellow, Green**. The green dot is 1 px taller (
 
 Same four x positions, width `28 px` = **`9.3 dp`**, `rx = 14 px` (fully rounded).
 
-| Bar | Colour | Height px | Height dp | Top y px |
-|---|---|---|---|---|
-| 1 | `#4285F4` | 194 | 64.7 | 856 |
-| 2 | `#EA4335` | 102 | 34.0 | 901 |
-| 3 | `#FBBC04` | 164 | 54.7 | 873 |
-| 4 | `#34A853` | 125 | 41.7 | 894 |
+| Bar | Colour    | Height px | Height dp | Top y px |
+|-----|-----------|-----------|-----------|----------|
+| 1   | `#4285F4` | 194       | 64.7      | 856      |
+| 2   | `#EA4335` | 102       | 34.0      | 901      |
+| 3   | `#FBBC04` | 164       | 54.7      | 873      |
+| 4   | `#34A853` | 125       | 41.7      | 894      |
 
 All four are **vertically centred** on the same axis (y ≈ 953 px). These heights are the
 animation's amplitude extremes — treat `16 dp` (the dot diameter) as the resting height and
@@ -195,15 +195,15 @@ animation's amplitude extremes — treat `16 dp` (the dot diameter) as the resti
 
 ### 4.5 Chat bubbles
 
-| Property | px | dp |
-|---|---|---|
-| Height | 114 | **38** |
-| Corner radius | 57 | 19 (fully rounded pill) |
-| Observed widths | 458 – 875 | 153 – 292 |
-| Horizontal text padding | 49 – 84 | **16 – 20** (use 20) |
-| Vertical gap between bubbles | ~107 | **36** |
-| Assistant bubble left inset | 294 | **98** (leaves room for the avatar) |
-| User bubble left inset | 308 | **103** (right-aligned in practice) |
+| Property                     | px        | dp                                  |
+|------------------------------|-----------|-------------------------------------|
+| Height                       | 114       | **38**                              |
+| Corner radius                | 57        | 19 (fully rounded pill)             |
+| Observed widths              | 458 – 875 | 153 – 292                           |
+| Horizontal text padding      | 49 – 84   | **16 – 20** (use 20)                |
+| Vertical gap between bubbles | ~107      | **36**                              |
+| Assistant bubble left inset  | 294       | **98** (leaves room for the avatar) |
+| User bubble left inset       | 308       | **103** (right-aligned in practice) |
 
 Multi-line / rich text bubbles grow to `131 px` (**44 dp**) with `rx = 65.5 px`.
 
@@ -211,13 +211,13 @@ Multi-line / rich text bubbles grow to `131 px` (**44 dp**) with `rx = 65.5 px`.
 
 Consistent across **every** frame — the single most stable element in the mockup.
 
-| Property | px | dp |
-|---|---|---|
-| Button diameter | 135 | **45** |
-| Button centre x | 299.5 / 539.5 / 779.5 | 100 / 180 / 260 |
-| Spacing between centres | 240 | **80** |
-| Top y | 1692 | 564 |
-| Distance from frame bottom | 93 | **31** |
+| Property                   | px                    | dp              |
+|----------------------------|-----------------------|-----------------|
+| Button diameter            | 135                   | **45**          |
+| Button centre x            | 299.5 / 539.5 / 779.5 | 100 / 180 / 260 |
+| Spacing between centres    | 240                   | **80**          |
+| Top y                      | 1692                  | 564             |
+| Distance from frame bottom | 93                    | **31**          |
 
 Row is horizontally centred on the sheet. Icons, left → right:
 
@@ -235,13 +235,13 @@ In the dark variant (Frame F) the same three buttons render as `#1F1F1F` circles
 
 Frames E, G, I show a grid of large circular buttons above the conversation.
 
-| Property | px | dp |
-|---|---|---|
-| Circle radius | 78.5 | **26.2** (52 dp diameter) |
-| Centre x | 166 / 406 / 646 / 886 | 55 / 135 / 215 / 295 |
-| Column pitch | 240 | **80** |
-| Row centre y | 172, 402 | 57, 134 |
-| Row pitch | 230 | **76.7** |
+| Property      | px                    | dp                        |
+|---------------|-----------------------|---------------------------|
+| Circle radius | 78.5                  | **26.2** (52 dp diameter) |
+| Centre x      | 166 / 406 / 646 / 886 | 55 / 135 / 215 / 295      |
+| Column pitch  | 240                   | **80**                    |
+| Row centre y  | 172, 402              | 57, 134                   |
+| Row pitch     | 230                   | **76.7**                  |
 
 So: **4 columns × 2 rows**, `80 dp` pitch horizontally, `77 dp` vertically. Colour cycle per
 column is Blue, Red, Yellow, Green. Label text sits directly above/below each row.
@@ -256,19 +256,19 @@ placing a call. The mockup's calling and music-player cards are **not built** �
 
 All three cards share one `ActionCard` shape rather than each being bespoke:
 
-| Slot | Value |
-|---|---|
-| Card shape | `RoundedCornerShape(16.dp)`, `ElevatedCard` on `cardSurface` |
-| Leading glyph | `40 dp` circle, accent @ 15 % opacity, `20 dp` icon |
-| Title | `titleMedium` on `textPrimary` |
-| Subtitle | `bodyMedium` on `textSecondary` |
-| Trailing | optional; only the alarm card uses it (a Material 3 `Switch`, per Frame J) |
-| Footer | right-aligned `TextButton` that hands off to the system app |
+| Slot          | Value                                                                      |
+|---------------|----------------------------------------------------------------------------|
+| Card shape    | `RoundedCornerShape(16.dp)`, `ElevatedCard` on `cardSurface`               |
+| Leading glyph | `40 dp` circle, accent @ 15 % opacity, `20 dp` icon                        |
+| Title         | `titleMedium` on `textPrimary`                                             |
+| Subtitle      | `bodyMedium` on `textSecondary`                                            |
+| Trailing      | optional; only the alarm card uses it (a Material 3 `Switch`, per Frame J) |
+| Footer        | right-aligned `TextButton` that hands off to the system app                |
 
-| Card | Title | Subtitle | Footer |
-|---|---|---|---|
-| Alarm | `7:00 AM` | label | "Set in Clock" |
-| Timer | `10:00` | label | "Start in Clock" |
+| Card           | Title       | Subtitle            | Footer            |
+|----------------|-------------|---------------------|-------------------|
+| Alarm          | `7:00 AM`   | label               | "Set in Clock"    |
+| Timer          | `10:00`     | label               | "Start in Clock"  |
 | Calendar event | event title | `EEE d MMM, h:mm a` | "Add to Calendar" |
 
 The Frame J alarm pill (`244 × 92 px` = **81 × 30.7 dp**, `rx = 46`, with an `89 px` ≈ **30 dp**
@@ -386,13 +386,13 @@ The app never rings an alarm or places a call itself. `ToolAction` values travel
 ViewModel to the activity over a one-shot `Channel`, and `Context.perform(action)` turns each
 into a system intent:
 
-| Action | Intent | Notes |
-|---|---|---|
-| `Dial` | `ACTION_DIAL` (`tel:`) | **not** `ACTION_CALL` — needs no runtime permission and leaves the final press to the user |
-| `Dial` (name, not digits) | `ACTION_VIEW` on `Phone.CONTENT_FILTER_URI` | opens contacts filtered to the name; no `READ_CONTACTS` needed on our side |
-| `SetAlarm` | `AlarmClock.ACTION_SET_ALARM` | requires the normal `SET_ALARM` permission |
-| `StartTimer` | `AlarmClock.ACTION_SET_TIMER` | |
-| `CreateEvent` | `ACTION_INSERT` on `Events.CONTENT_URI` | no permission required |
+| Action                    | Intent                                      | Notes                                                                                      |
+|---------------------------|---------------------------------------------|--------------------------------------------------------------------------------------------|
+| `Dial`                    | `ACTION_DIAL` (`tel:`)                      | **not** `ACTION_CALL` — needs no runtime permission and leaves the final press to the user |
+| `Dial` (name, not digits) | `ACTION_VIEW` on `Phone.CONTENT_FILTER_URI` | opens contacts filtered to the name; no `READ_CONTACTS` needed on our side                 |
+| `SetAlarm`                | `AlarmClock.ACTION_SET_ALARM`               | requires the normal `SET_ALARM` permission                                                 |
+| `StartTimer`              | `AlarmClock.ACTION_SET_TIMER`               |                                                                                            |
+| `CreateEvent`             | `ACTION_INSERT` on `Events.CONTENT_URI`     | no permission required                                                                     |
 
 `EXTRA_SKIP_UI` is left `false` so the clock app always confirms with the user. Every launch is
 wrapped against `ActivityNotFoundException` and falls back to a toast.
