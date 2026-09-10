@@ -39,7 +39,12 @@ class AssistantViewModel(
     }
 
     fun toggleKeyboard() {
-        _uiState.update { it.copy(keyboardOpen = !it.keyboardOpen) }
+        _uiState.update {
+            it.copy(
+                keyboardOpen = !it.keyboardOpen,
+                lastInputMethod = if (!it.keyboardOpen) InputMethod.Keyboard else it.lastInputMethod,
+            )
+        }
     }
 
     fun submit(text: String) {
@@ -139,6 +144,7 @@ class AssistantViewModel(
                 state = AssistantState.Listening,
                 partialTranscript = "",
                 keyboardOpen = false,
+                lastInputMethod = InputMethod.Voice,
                 error = null,
             )
         }

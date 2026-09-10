@@ -67,12 +67,17 @@ sealed interface AssistantError {
 
 enum class AssistantState { Idle, Listening, Processing, DisplayingResult, Error }
 
+/** Which input method the user last interacted with. Drives the center button. */
+@Immutable
+enum class InputMethod { Voice, Keyboard }
+
 @Immutable
 data class AssistantUiState(
     val state: AssistantState = AssistantState.Idle,
     val conversation: List<ConversationItem> = emptyList(),
     val partialTranscript: String = "",
     val keyboardOpen: Boolean = false,
+    val lastInputMethod: InputMethod = InputMethod.Voice,
     /** Non-null exactly when [state] is [AssistantState.Error]. */
     val error: AssistantError? = null,
 ) {

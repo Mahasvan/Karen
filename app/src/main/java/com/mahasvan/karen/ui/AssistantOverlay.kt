@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -127,7 +128,9 @@ fun AssistantOverlay(
                 animationSpec = tween(300, easing = FastOutSlowInEasing),
             ) + fadeIn(tween(300)),
             exit = fadeOut(),
-            modifier = Modifier.align(Alignment.BottomCenter),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .imePadding(),
         ) {
             Column(
                 modifier = Modifier
@@ -177,7 +180,7 @@ fun AssistantOverlay(
 
                 BottomActionBar(
                     state = uiState.state,
-                    onLensClick = {},
+                    lastInputMethod = uiState.lastInputMethod,
                     onMicClick = onMicClick,
                     onKeyboardClick = onKeyboardClick,
                     // Bottom spacing comes from the navigationBars inset on the parent Column;

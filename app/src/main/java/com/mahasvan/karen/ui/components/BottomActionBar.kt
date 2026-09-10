@@ -8,15 +8,14 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Keyboard
+import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -30,84 +29,104 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.mahasvan.karen.R
 import com.mahasvan.karen.assistant.AssistantState
+import com.mahasvan.karen.assistant.InputMethod
 import com.mahasvan.karen.ui.theme.AssistantTheme
 
-private val ButtonSize = 45.dp
-private val ButtonGap = 35.dp
+private val PrimaryButtonSize = 64.dp
+private val SecondaryButtonSize = 48.dp
 
 /**
- * Lens / microphone / keyboard. The microphone slot swaps to the voice
- * visualizer while listening.
+ * Two buttons: a large center button showing the last-used input method
+ * (mic or keyboard), and a small button in the far left corner to switch
+ * to the other method.
  */
 @Composable
 fun BottomActionBar(
     state: AssistantState,
-    onLensClick: () -> Unit,
+    lastInputMethod: InputMethod,
     onMicClick: () -> Unit,
     onKeyboardClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val haptics = LocalHapticFeedback.current
-    Row(
+    Box(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(ButtonGap, Alignment.CenterHorizontally),
-        verticalAlignment = Alignment.CenterVertically,
+        contentAlignment = Alignment.Center,
     ) {
-        ActionButton(onClick = onLensClick) {
-            Icon(
-                painter = painterResource(R.drawable.ic_google_lens),
-                contentDescription = stringResource(R.string.action_lens),
-                tint = AssistantTheme.palette.actionIconTint,
-                modifier = Modifier.size(24.dp),
-            )
-        }
-
-        ActionButton(
+        // Secondary button: far left corner, smaller.
+        PrimaryButton(
             onClick = {
                 haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                onMicClick()
+                if (lastInputMethod == InputMethod.Voice) onKeyboardClick() else onMicClick()
+            },
+            size = SecondaryButtonSize,
+            modifier = Modifier.align(Alignment.CenterStart),
+        ) {
+            if (lastInputMethod == InputMethod.Voice) {
+                Icon(
+                    imageVector = Icons.Outlined.Keyboard,
+                    contentDescription = stringResource(R.string.action_keyboard),
+                    tint = AssistantTheme.palette.actionIconTint,
+                    modifier = Modifier.size(25.dp),
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Outlined.Mic,
+                    contentDescription = stringResource(R.string.action_speak),
+                    tint = AssistantTheme.palette.actionIconTint,
+                    modifier = Modifier.size(18.dp),
+                )
             }
+        }
+
+        // Center button: large, shows the last-used input method.
+        PrimaryButton(
+            onClick = {
+                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                if (lastInputMethod == InputMethod.Voice) onMicClick() else onKeyboardClick()
+            },
+            size = PrimaryButtonSize,
         ) {
             AnimatedContent(
                 targetState = state == AssistantState.Listening,
                 transitionSpec = {
                     (fadeIn() + scaleIn(initialScale = 0.8f)) togetherWith
-                            (fadeOut() + scaleOut(targetScale = 0.8f))
+                        (fadeOut() + scaleOut(targetScale = 0.8f))
                 },
-                label = "mic",
+                label = "primary",
             ) { listening ->
-                if (listening) {
+                if (listening && lastInputMethod == InputMethod.Voice) {
                     VoiceVisualizer(listening = true, scale = 0.28f)
-                } else {
+                } else if (lastInputMethod == InputMethod.Voice) {
                     Icon(
                         painter = painterResource(R.drawable.ic_google_mic),
                         contentDescription = stringResource(R.string.action_speak),
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(width = 20.dp, height = 22.dp),
+                        modifier = Modifier.size(width = 28.dp, height = 30.dp),
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Outlined.Keyboard,
+                        contentDescription = stringResource(R.string.action_keyboard),
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(30.dp),
                     )
                 }
             }
-        }
-
-        ActionButton(onClick = onKeyboardClick) {
-            Icon(
-                imageVector = Icons.Outlined.Keyboard,
-                contentDescription = stringResource(R.string.action_keyboard),
-                tint = AssistantTheme.palette.actionIconTint,
-                modifier = Modifier.size(24.dp),
-            )
         }
     }
 }
 
 @Composable
-private fun ActionButton(
+private fun PrimaryButton(
     onClick: () -> Unit,
+    size: androidx.compose.ui.unit.Dp,
+    modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
     Box(
-        modifier = Modifier
-            .size(ButtonSize)
+        modifier = modifier
+            .size(size)
             .shadow(3.dp, CircleShape)
             .background(AssistantTheme.palette.actionButton, CircleShape)
             .clickable(onClick = onClick)
