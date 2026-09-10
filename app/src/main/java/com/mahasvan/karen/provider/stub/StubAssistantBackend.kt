@@ -15,6 +15,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.flow
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Keyword matching standing in for real language understanding.
@@ -56,7 +57,7 @@ class StubAssistantBackend(
     }
 
     private fun produceReplies(prompt: String): Flow<AssistantReply> = flow {
-        delay(700)
+        delay(700.milliseconds)
         val text = prompt.lowercase()
         when {
             "call" in text || "dial" in text || "phone" in text -> emitDial(text)
