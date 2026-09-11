@@ -116,15 +116,15 @@ class TensorAssistantBackend(
             Log.i(
                 TAG,
                 "Model capabilities: speculativeDecoding=${capabilities.speculativeDecoding}, " +
-                    "thinking=${capabilities.thinking}, " +
-                    "functionCalling=${capabilities.functionCalling}, " +
-                    "modalities=${capabilities.inputModalities}",
+                        "thinking=${capabilities.thinking}, " +
+                        "functionCalling=${capabilities.functionCalling}, " +
+                        "modalities=${capabilities.inputModalities}",
             )
             if (!capabilities.functionCalling) {
                 Log.w(
                     TAG,
                     "Model does not advertise function calling; tools may be " +
-                        "ignored or hallucinated rather than invoked.",
+                            "ignored or hallucinated rather than invoked.",
                 )
             }
             ExperimentalFlags.enableSpeculativeDecoding = capabilities.speculativeDecoding
@@ -136,7 +136,7 @@ class TensorAssistantBackend(
             } catch (e: Exception) {
                 throw ModelUnavailableException(
                     "Could not start the on-device model: ${e.message ?: e.javaClass.simpleName}. " +
-                        "Check logcat (tag: litert) for dispatch backend or TPU errors.",
+                            "Check logcat (tag: litert) for dispatch backend or TPU errors.",
                     e,
                 )
             }
@@ -180,7 +180,12 @@ class TensorAssistantBackend(
                     false,
                     thinking = false,
                     functionCalling = false,
-                    inputModalities = SupportedModalities(text = true, vision = false, audio = false , video = false)
+                    inputModalities = SupportedModalities(
+                        text = true,
+                        vision = false,
+                        audio = false,
+                        video = false
+                    )
                 )
             }
     }
@@ -213,7 +218,7 @@ class TensorAssistantBackend(
                     Log.d(
                         TAG,
                         "Message: text='$text', toolCalls=${message.toolCalls.size}, " +
-                            "contents=${message.contents.contents.map { it::class.simpleName }}",
+                                "contents=${message.contents.contents.map { it::class.simpleName }}",
                     )
                     if (text.isEmpty()) return@collect
                     accumulated.append(text)
@@ -225,7 +230,10 @@ class TensorAssistantBackend(
             return@flow
         }
 
-        Log.d(TAG, "Flow complete: accumulated=${accumulated.length} chars, tools=${completedTools.size}")
+        Log.d(
+            TAG,
+            "Flow complete: accumulated=${accumulated.length} chars, tools=${completedTools.size}"
+        )
 
         // Drain tool results. Cards are emitted as cards; card-less tools (e.g. dial)
         // fall back to their message as text so the user sees something.

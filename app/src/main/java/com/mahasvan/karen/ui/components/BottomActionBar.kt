@@ -60,7 +60,9 @@ fun BottomActionBar(
                 if (lastInputMethod == InputMethod.Voice) onKeyboardClick() else onMicClick()
             },
             size = SecondaryButtonSize,
-            modifier = Modifier.align(Alignment.CenterEnd).padding(horizontal = 10.dp),
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(horizontal = 10.dp),
         ) {
             if (lastInputMethod == InputMethod.Voice) {
                 Icon(
@@ -91,7 +93,7 @@ fun BottomActionBar(
                 targetState = state == AssistantState.Listening,
                 transitionSpec = {
                     (fadeIn() + scaleIn(initialScale = 0.8f)) togetherWith
-                        (fadeOut() + scaleOut(targetScale = 0.8f))
+                            (fadeOut() + scaleOut(targetScale = 0.8f))
                 },
                 label = "primary",
             ) { listening ->

@@ -29,12 +29,12 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
@@ -58,7 +58,6 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
@@ -68,12 +67,13 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.core.content.ContextCompat
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import com.mahasvan.karen.R
 import com.mahasvan.karen.assistant.AssistantError
 import com.mahasvan.karen.assistant.AssistantState
@@ -83,13 +83,11 @@ import com.mahasvan.karen.ui.components.AssistantAvatar
 import com.mahasvan.karen.ui.components.BottomActionBar
 import com.mahasvan.karen.ui.components.ConversationStream
 import com.mahasvan.karen.ui.components.GlowingLightBar
-import com.mahasvan.karen.ui.components.SuggestionGrid
-import com.mahasvan.karen.ui.theme.AssistantTheme
 import com.mahasvan.karen.ui.theme.AppTheme
-import androidx.compose.ui.tooling.preview.Preview
+import com.mahasvan.karen.ui.theme.AssistantTheme
+import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 import kotlin.random.Random
-import kotlinx.coroutines.launch
 
 private val SheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
 
@@ -257,7 +255,9 @@ fun AssistantOverlay(
 //                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 0.dp),
 //                    )
                     Column(
-                        modifier = Modifier.fillMaxWidth().weight(1f),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center,
                     ) {
@@ -464,10 +464,13 @@ fun AssistantOverlayConversationPreview() {
                 state = AssistantState.DisplayingResult,
                 conversation = listOf(
                     ConversationItem.UserQuery(id = 1L, text = "Hello! What can you do?"),
-                    ConversationItem.AssistantText(id = 2L, text = "I can help you **bold your text**, `write code`, and _write italics_.\n\n" +
-                            "| I | can | also |\n" +
-                            "|---|---|---|\n" +
-                            "| write | a | table |")
+                    ConversationItem.AssistantText(
+                        id = 2L,
+                        text = "I can help you **bold your text**, `write code`, and _write italics_.\n\n" +
+                                "| I | can | also |\n" +
+                                "|---|---|---|\n" +
+                                "| write | a | table |"
+                    )
                 )
             ),
             onMicClick = {},

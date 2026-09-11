@@ -16,7 +16,6 @@ import com.mahasvan.karen.assistant.SpeechSource
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-import java.util.Locale
 
 private const val TAG = "PlatformSpeechSource"
 
@@ -82,8 +81,10 @@ class PlatformSpeechSource(private val context: Context) : SpeechSource {
                 val message = when (error) {
                     SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS ->
                         "Microphone permission is required for voice input"
+
                     SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE ->
                         "Speech recognition language pack not available. Download it in Settings → System → Keyboard → Voice typing"
+
                     else -> null
                 }
                 if (message != null) {
@@ -114,8 +115,7 @@ class PlatformSpeechSource(private val context: Context) : SpeechSource {
 
                 if (text.isNotEmpty()) {
                     trySend(SpeechEvent.FinalTranscript(text))
-                }
-                else if (lastPartial.isNotEmpty()) {
+                } else if (lastPartial.isNotEmpty()) {
                     // sometimes partial text may be recognized, yet final result may be empty.
                     Log.d(TAG, "onResults empty - sending partial: '$lastPartial'")
                     trySend(SpeechEvent.FinalTranscript(lastPartial))

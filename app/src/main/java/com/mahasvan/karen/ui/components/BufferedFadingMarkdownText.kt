@@ -20,8 +20,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.SpanStyle
@@ -107,7 +107,9 @@ fun BufferedFadingMarkdownText(text: String, inProgress: Boolean, modifier: Modi
         // and BlendMode.Plus adds the colors, the transition appears as a smooth crossfade
         // without any intermediate darkening or color artifacts.
         SelectionContainer {
-            MarkdownText(text = text1, modifier = Modifier.graphicsLayer { alpha = 1f - alpha2.value })
+            MarkdownText(
+                text = text1,
+                modifier = Modifier.graphicsLayer { alpha = 1f - alpha2.value })
         }
 
         // LAYER 2: Overlay text.
@@ -115,16 +117,17 @@ fun BufferedFadingMarkdownText(text: String, inProgress: Boolean, modifier: Modi
             MarkdownText(
                 text = text2,
                 modifier =
-                // Ignore this layer in terms of accessibility semantics (won't be read by screen
-                // readers).
-                Modifier.clearAndSetSemantics {}
-                    .graphicsLayer {
-                        alpha = alpha2.value
-                        // Use BlendMode.Plus to ensure that when alpha2 is between 0 and 1,
-                        // the overlay text is added on top of the base text without
-                        // darkening or other complex blending effects.
-                        this.blendMode = BlendMode.Plus
-                    },
+                    // Ignore this layer in terms of accessibility semantics (won't be read by screen
+                    // readers).
+                    Modifier
+                        .clearAndSetSemantics {}
+                        .graphicsLayer {
+                            alpha = alpha2.value
+                            // Use BlendMode.Plus to ensure that when alpha2 is between 0 and 1,
+                            // the overlay text is added on top of the base text without
+                            // darkening or other complex blending effects.
+                            this.blendMode = BlendMode.Plus
+                        },
             )
         }
     }
@@ -158,7 +161,13 @@ fun MarkdownText(
                             lineHeight = MaterialTheme.typography.bodySmall.fontSize * 1.4f,
                         )
                     ),
-                    stringStyle = RichTextStringStyle(linkStyle = TextLinkStyles(style = SpanStyle(color = linkColor))),
+                    stringStyle = RichTextStringStyle(
+                        linkStyle = TextLinkStyles(
+                            style = SpanStyle(
+                                color = linkColor
+                            )
+                        )
+                    ),
                 ),
             ) {
                 Markdown(content = text)

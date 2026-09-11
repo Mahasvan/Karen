@@ -156,10 +156,12 @@ class AssistantViewModel(
                         is SpeechEvent.PartialTranscript -> _uiState.update {
                             it.copy(partialTranscript = event.text)
                         }
+
                         is SpeechEvent.FinalTranscript -> {
                             finalText = event.text
                             _uiState.update { it.copy(partialTranscript = event.text) }
                         }
+
                         is SpeechEvent.Amplitude -> {
                             // todo: Live updating UI based on amplitude
                         }

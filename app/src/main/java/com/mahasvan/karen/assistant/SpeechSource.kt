@@ -24,6 +24,6 @@ interface SpeechSource {
 sealed interface SpeechEvent {
     data class PartialTranscript(val text: String) : SpeechEvent
     data class FinalTranscript(val text: String) : SpeechEvent
-    data class Amplitude(val rmsdB: Float): SpeechEvent
+    data class Amplitude(val rmsdB: Float) : SpeechEvent
 
 }
