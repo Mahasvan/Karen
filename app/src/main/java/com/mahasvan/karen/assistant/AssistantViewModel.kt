@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.AP
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import com.mahasvan.karen.provider.stub.StubSpeechSource
+import com.mahasvan.karen.provider.platform.PlatformSpeechSource
 import com.mahasvan.karen.provider.tensor.TensorAssistantBackend
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -149,11 +149,21 @@ class AssistantViewModel(
             )
         }
         listenJob = viewModelScope.launch {
-            var transcript = ""
+            var finalText: String? = null
             try {
-                speech.transcribe().collect { partial ->
-                    transcript = partial
-                    _uiState.update { it.copy(partialTranscript = partial) }
+                speech.transcribe().collect { event ->
+                    when (event) {
+                        is SpeechEvent.PartialTranscript -> _uiState.update {
+                            it.copy(partialTranscript = event.text)
+                        }
+                        is SpeechEvent.FinalTranscript -> {
+                            finalText = event.text
+                            _uiState.update { it.copy(partialTranscript = event.text) }
+                        }
+                        is SpeechEvent.Amplitude -> {
+                            // todo: Live updating UI based on amplitude
+                        }
+                    }
                 }
             } catch (e: CancellationException) {
                 throw e
@@ -162,7 +172,13 @@ class AssistantViewModel(
                 return@launch
             }
             listenJob = null
-            if (transcript.isNotBlank()) beginTurn(transcript)
+
+            val text = finalText
+            if (!text.isNullOrBlank()) {
+                beginTurn(text)
+            } else {
+                _uiState.update { it.copy(state = AssistantState.Idle, partialTranscript = "") }
+            }
         }
     }
 
@@ -183,7 +199,7 @@ class AssistantViewModel(
                 val app = this[APPLICATION_KEY] as Application
                 AssistantViewModel(
                     TensorAssistantBackend(app, TensorAssistantBackend.defaultModelFile(app)),
-                    StubSpeechSource(),
+                    PlatformSpeechSource(app),
                 )
             }
         }

@@ -1,5 +1,6 @@
 package com.mahasvan.karen.provider.stub
 
+import com.mahasvan.karen.assistant.SpeechEvent
 import com.mahasvan.karen.assistant.SpeechSource
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -12,16 +13,17 @@ import kotlin.time.Duration.Companion.milliseconds
  */
 class StubSpeechSource : SpeechSource {
 
-    override fun transcribe(): Flow<String> = flow {
+    override fun transcribe(): Flow<SpeechEvent> = flow {
         val utterance = STUB_UTTERANCES.random()
         val spoken = StringBuilder()
         utterance.split(" ").forEach { word ->
             delay(260.milliseconds)
             if (spoken.isNotEmpty()) spoken.append(' ')
             spoken.append(word)
-            emit(spoken.toString())
+            emit(SpeechEvent.PartialTranscript(spoken.toString()))
         }
         delay(400.milliseconds)
+        emit(SpeechEvent.FinalTranscript(spoken.toString()))
     }
 
     private companion object {
