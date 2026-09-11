@@ -83,6 +83,7 @@ import com.mahasvan.karen.ui.components.AssistantAvatar
 import com.mahasvan.karen.ui.components.BottomActionBar
 import com.mahasvan.karen.ui.components.ConversationStream
 import com.mahasvan.karen.ui.components.GlowingLightBar
+import com.mahasvan.karen.ui.components.ResizableColorStrip
 import com.mahasvan.karen.ui.theme.AppTheme
 import com.mahasvan.karen.ui.theme.AssistantTheme
 import kotlinx.coroutines.launch
@@ -329,6 +330,13 @@ fun AssistantOverlay(
         ) {
             GlowingLightBar()
         }
+
+        ResizableColorStrip(
+            colors = AssistantTheme.brandColors,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth(),
+        )
     }
 }
 
