@@ -81,5 +81,5 @@ data class AssistantUiState(
     /** Non-null exactly when [state] is [AssistantState.Error]. */
     val error: AssistantError? = null,
 ) {
-    val showSuggestionGrid: Boolean get() = conversation.isEmpty() && error == null
+    val showLanding: Boolean get() = conversation.isEmpty() && error == null
 }

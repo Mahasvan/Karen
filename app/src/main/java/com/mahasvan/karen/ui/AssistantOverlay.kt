@@ -1,5 +1,10 @@
 package com.mahasvan.karen.ui
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -60,8 +65,10 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.core.content.ContextCompat
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -111,6 +118,19 @@ fun AssistantOverlay(
     modifier: Modifier = Modifier,
 ) {
     val palette = AssistantTheme.palette
+
+    val context = LocalContext.current
+    val micPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted -> if (granted) onMicClick() }
+
+    val onMicClickWithPermission: () -> Unit = {
+        val granted = ContextCompat.checkSelfPermission(
+            context, Manifest.permission.RECORD_AUDIO,
+        ) == PackageManager.PERMISSION_GRANTED
+        Log.d("AssistantOverlay", "mic toggle, RECORD_AUDIO granted=$granted")
+        if (granted) onMicClick() else micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+    }
 
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         // A landscape phone has so little height that the mockup's half-screen sheet leaves
@@ -230,13 +250,12 @@ fun AssistantOverlay(
                     onDragEnd = { settleSheetDrag(0f) },
                 )
 
-                if (uiState.showSuggestionGrid) {
-                    // Temporary testing shortcuts — will be removed later.
+                if (uiState.showLanding) {
                     // todo: remove once testing is done
-                    SuggestionGrid(
-                        onSuggestionClick = onSubmit,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 0.dp),
-                    )
+//                    SuggestionGrid(
+//                        onSuggestionClick = onSubmit,
+//                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 0.dp),
+//                    )
                     Column(
                         modifier = Modifier.fillMaxWidth().weight(1f),
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -293,7 +312,7 @@ fun AssistantOverlay(
                 BottomActionBar(
                     state = uiState.state,
                     lastInputMethod = uiState.lastInputMethod,
-                    onMicClick = onMicClick,
+                    onMicClick = onMicClickWithPermission,
                     onKeyboardClick = onKeyboardClick,
                     // Bottom spacing comes from the navigationBars inset on the parent Column;
                     // adding a fixed inset here as well double-pads on gesture-nav devices.
