@@ -39,9 +39,14 @@ class AssistantViewModel(
     }
 
     fun toggleKeyboard() {
+        // Discard any pending voice input when switching to keyboard.
+        listenJob?.cancel()
+        listenJob = null
         _uiState.update {
             it.copy(
+                state = if (it.state == AssistantState.Listening) AssistantState.Idle else it.state,
                 keyboardOpen = !it.keyboardOpen,
+                partialTranscript = if (it.state == AssistantState.Listening) "" else it.partialTranscript,
                 lastInputMethod = if (!it.keyboardOpen) InputMethod.Keyboard else it.lastInputMethod,
             )
         }
