@@ -12,7 +12,7 @@ import com.mahasvan.karen.tools.Tool
 import com.mahasvan.karen.tools.ToolCard
 import com.mahasvan.karen.tools.ToolParameter
 import com.mahasvan.karen.tools.ToolResult
-import com.mahasvan.karen.ui.components.ActionCard
+import com.mahasvan.karen.ui.components.actioncards.SimpleActionCard
 
 const val TIMER_TOOL = "start_timer"
 
@@ -51,7 +51,7 @@ object TimerTool : Tool {
     @Composable
     override fun CardContent(card: ToolCard) {
         val timer = card as TimerCard
-        ActionCard(
+        SimpleActionCard(
             icon = Icons.Outlined.HourglassEmpty,
             title = formatDuration(timer.totalSeconds),
             header = "Timer Started",

@@ -12,7 +12,7 @@ import com.mahasvan.karen.tools.Tool
 import com.mahasvan.karen.tools.ToolCard
 import com.mahasvan.karen.tools.ToolParameter
 import com.mahasvan.karen.tools.ToolResult
-import com.mahasvan.karen.ui.components.ActionCard
+import com.mahasvan.karen.ui.components.actioncards.SimpleActionCard
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -70,7 +70,7 @@ object CalendarEventTool : Tool {
     @Composable
     override fun CardContent(card: ToolCard) {
         val event = card as CalendarEventCard
-        ActionCard(
+        SimpleActionCard(
             icon = Icons.Outlined.Event,
             title = event.title,
             header = "Added to Calendar",

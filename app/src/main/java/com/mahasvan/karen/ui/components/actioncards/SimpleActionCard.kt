@@ -1,4 +1,4 @@
-package com.mahasvan.karen.ui.components
+package com.mahasvan.karen.ui.components.actioncards
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
@@ -7,15 +7,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Alarm
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -37,25 +34,19 @@ private val CardShape = RoundedCornerShape(25.dp)
  * rather than reimplementing it, so a new capability inherits the styling for free.
  */
 @Composable
-fun ActionCard(
+fun SimpleActionCard(
+    modifier: Modifier = Modifier,
     icon: ImageVector,
     title: String,
     header: String? = null,
     subtitle: String? = null,
-    modifier: Modifier = Modifier,
 ) {
     val palette = AssistantTheme.palette
     val accent = AssistantTheme.brandColors.first()
-
-    ElevatedCard(
-        shape = CardShape,
-        modifier = modifier
-            .fillMaxWidth()
-            .height(120.dp)
-    ) {
+    
+    return BoundedActionCard(modifier = modifier, maxHeight = 120.dp) {
         Row(
             modifier = Modifier
-//                .fillMaxWidth()
                 .fillMaxSize()
                 .background(palette.cardSurface)
                 .padding(horizontal = 16.dp, vertical = 14.dp),
@@ -105,12 +96,12 @@ fun ActionCard(
 
 @Preview
 @Composable
-fun ActionCardPreview() {
+fun SimpleActionCardPreview() {
     AppTheme {
-        ActionCard(
+        SimpleActionCard(
             icon = Icons.Outlined.Alarm,
             title = "7:00 AM",
-            header = "Set Alarm",
+            header = "Alarm Set",
             subtitle = "Wake up!",
         )
     }

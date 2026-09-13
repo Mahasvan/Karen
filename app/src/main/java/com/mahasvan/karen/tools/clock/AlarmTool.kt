@@ -12,7 +12,7 @@ import com.mahasvan.karen.tools.Tool
 import com.mahasvan.karen.tools.ToolCard
 import com.mahasvan.karen.tools.ToolParameter
 import com.mahasvan.karen.tools.ToolResult
-import com.mahasvan.karen.ui.components.ActionCard
+import com.mahasvan.karen.ui.components.actioncards.SimpleActionCard
 
 const val ALARM_TOOL = "set_alarm"
 
@@ -52,7 +52,7 @@ object AlarmTool : Tool {
     @Composable
     override fun CardContent(card: ToolCard) {
         val alarm = card as AlarmCard
-        ActionCard(
+        SimpleActionCard(
             icon = Icons.Outlined.Alarm,
             title = formatClock(alarm.hour, alarm.minute),
             header = "Alarm Set",
