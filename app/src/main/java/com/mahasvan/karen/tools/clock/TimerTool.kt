@@ -8,11 +8,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.HourglassEmpty
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import com.mahasvan.karen.tools.Tool
 import com.mahasvan.karen.tools.ToolCard
 import com.mahasvan.karen.tools.ToolParameter
 import com.mahasvan.karen.tools.ToolResult
 import com.mahasvan.karen.ui.components.actioncards.SimpleActionCard
+import kotlinx.coroutines.delay
+import java.lang.System.currentTimeMillis
+import kotlin.time.Duration.Companion.milliseconds
 
 const val TIMER_TOOL = "start_timer"
 
@@ -42,7 +47,7 @@ object TimerTool : Tool {
                     putExtra(AlarmClock.EXTRA_SKIP_UI, true)
                 }.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             )
-            ToolResult(true, "Timer started", TimerCard(seconds, label))
+            ToolResult(true, "Timer started", TimerCard(seconds, label, currentTimeMillis()))
         } catch (_: ActivityNotFoundException) {
             ToolResult(false, "No clock app available")
         }
@@ -51,9 +56,16 @@ object TimerTool : Tool {
     @Composable
     override fun CardContent(card: ToolCard) {
         val timer = card as TimerCard
+        val remaining by produceState(timer.totalSeconds, timer.startEpochMillis) {
+            while (value > 0) {
+                val elapsed = ((currentTimeMillis() - timer.startEpochMillis) / 1000).toInt()
+                value = (timer.totalSeconds - elapsed).coerceAtLeast(0)
+                if (value > 0) delay(1000.milliseconds)
+            }
+        }
         SimpleActionCard(
             icon = Icons.Outlined.HourglassEmpty,
-            title = formatDuration(timer.totalSeconds),
+            title = formatDuration(remaining),
             header = "Timer Started",
             subtitle = timer.label
         )
@@ -64,6 +76,7 @@ object TimerTool : Tool {
 data class TimerCard(
     val totalSeconds: Int,
     val label: String,
+    val startEpochMillis: Long,
 ) : ToolCard {
     override val toolName = TIMER_TOOL
 }
