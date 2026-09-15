@@ -113,6 +113,7 @@ fun AssistantOverlay(
     onSubmit: (String) -> Unit,
     onRetry: () -> Unit,
     onDismiss: () -> Unit,
+    onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val palette = AssistantTheme.palette
@@ -314,6 +315,7 @@ fun AssistantOverlay(
                     lastInputMethod = uiState.lastInputMethod,
                     onMicClick = onMicClickWithPermission,
                     onKeyboardClick = onKeyboardClick,
+                    onSettingsClick = onSettingsClick,
                     // Bottom spacing comes from the navigationBars inset on the parent Column;
                     // adding a fixed inset here as well double-pads on gesture-nav devices.
                     modifier = Modifier.padding(top = 8.dp, bottom = 8.dp),
@@ -450,7 +452,8 @@ fun AssistantOverlayInitialPreview() {
             onKeyboardClick = {},
             onSubmit = {},
             onRetry = {},
-            onDismiss = {}
+            onDismiss = {},
+            onSettingsClick = {},
         )
     }
 }
@@ -477,7 +480,8 @@ fun AssistantOverlayConversationPreview() {
             onKeyboardClick = {},
             onSubmit = {},
             onRetry = {},
-            onDismiss = {}
+            onDismiss = {},
+            onSettingsClick = {},
         )
     }
 }

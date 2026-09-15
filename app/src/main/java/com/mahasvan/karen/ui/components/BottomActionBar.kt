@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Keyboard
 import androidx.compose.material.icons.outlined.Mic
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -35,9 +36,9 @@ private val PrimaryButtonSize = 64.dp
 private val SecondaryButtonSize = 48.dp
 
 /**
- * Two buttons: a large center button showing the last-used input method
- * (mic or keyboard), and a small button in the far left corner to switch
- * to the other method.
+ * Three buttons: a large center button showing the last-used input method
+ * (mic or keyboard), a small button in the far right corner to switch to the
+ * other method, and a settings button in the far left corner.
  */
 @Composable
 fun BottomActionBar(
@@ -45,6 +46,7 @@ fun BottomActionBar(
     lastInputMethod: InputMethod,
     onMicClick: () -> Unit,
     onKeyboardClick: () -> Unit,
+    onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val haptics = LocalHapticFeedback.current
@@ -78,6 +80,25 @@ fun BottomActionBar(
                     modifier = Modifier.size(18.dp),
                 )
             }
+        }
+
+        // Settings: far left corner, mirrors the secondary button's size.
+        PrimaryButton(
+            onClick = {
+                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                onSettingsClick()
+            },
+            size = SecondaryButtonSize,
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .padding(horizontal = 10.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Settings,
+                contentDescription = stringResource(R.string.action_settings),
+                tint = AssistantTheme.palette.actionIconTint,
+                modifier = Modifier.size(22.dp),
+            )
         }
 
         // Center button: large, shows the last-used input method.
@@ -146,6 +167,7 @@ private fun BottomActionBarIdlePreview() {
             lastInputMethod = InputMethod.Voice,
             onMicClick = {},
             onKeyboardClick = {},
+            onSettingsClick = {},
         )
     }
 }
@@ -159,6 +181,7 @@ private fun BottomActionBarListeningPreview() {
             lastInputMethod = InputMethod.Voice,
             onMicClick = {},
             onKeyboardClick = {},
+            onSettingsClick = {},
         )
     }
 }
@@ -172,6 +195,7 @@ private fun BottomActionBarKeyboardPreview() {
             lastInputMethod = InputMethod.Keyboard,
             onMicClick = {},
             onKeyboardClick = {},
+            onSettingsClick = {},
         )
     }
 }

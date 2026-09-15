@@ -6,8 +6,16 @@
     <string name="action_speak">Speak</string>
     <string name="action_keyboard">Keyboard</string>
     <string name="action_send">Send</string>
+    <string name="action_settings">Settings</string>
     <string name="input_placeholder">Ask your assistant</string>
     <string name="overlay_dismiss">Dismiss</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="action_back">Back</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_material_you">Material You colours</string>
+    <string name="settings_material_you_summary">Match the palette to your wallpaper. Off uses the Google Assistant brand colours.</string>
 
     <!-- Landing -->
     <string name="try_saying">Try saying</string>
