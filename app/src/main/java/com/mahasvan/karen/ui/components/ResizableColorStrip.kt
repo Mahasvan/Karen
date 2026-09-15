@@ -9,12 +9,14 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.GenericShape
@@ -76,11 +78,12 @@ private val TopHalfEllipseShape = GenericShape { size, _ ->
 }
 
 @Composable
-fun HalfEllipse(height: Dp, color: Color) {
+fun HalfEllipse(width: Dp, height: Dp, color: Color) {
     Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .height(height)
+            // required, not size: overrides the weighted parent's width
+            // constraint so this can overdraw past its slot.
+            .requiredSize(width = width, height = height)
             .background(color = color, shape = TopHalfEllipseShape)
     )
 }
@@ -94,19 +97,31 @@ fun ColorStripBackground(
     extraWidth: Dp,
     maxHeight: Dp) {
 
-    Row(
-        modifier = Modifier
-            .fillMaxHeight()
-            .fillMaxWidth(),
-        verticalAlignment = Alignment.Bottom,
-    ) {
-        colors.forEachIndexed { index, color ->
-            Box(
-                modifier = modifier
-                    .weight(weights[index]),
-                contentAlignment = Alignment.BottomStart
-            ) {
-                HalfEllipse(height = heights[index].coerceIn(0f, 1f) * maxHeight, color = color)
+    // Measure the row so each bar knows its own slot width in Dp — needed to
+    // paint its half-ellipse wider than the slot (below).
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+        val rowWidth = maxWidth
+        Row(
+            modifier = Modifier
+                .fillMaxHeight()
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.Bottom,
+        ) {
+            colors.forEachIndexed { index, color ->
+                val slotWidth = rowWidth * weights[index]
+                Box(
+                    modifier = modifier
+                        .weight(weights[index]),
+                    contentAlignment = Alignment.BottomCenter
+                ) {
+                    // Overdraw past the slot on both sides so blur — which eats
+                    // the shape's edge inward — still reads at the intended width.
+                    HalfEllipse(
+                        width = slotWidth + extraWidth,
+                        height = heights[index].coerceIn(0f, 1f) * maxHeight,
+                        color = color,
+                    )
+                }
             }
         }
     }
@@ -122,7 +137,7 @@ fun ColorStripBackgroundPreview() {
         ColorStripBackground(
             colors = AssistantTheme.brandColors,
             weights = listOf(0.25f, 0.25f, 0.25f, 0.25f),
-            heights = listOf(0.1f, 0.5f, 0.3f, 0.5f),
+            heights = listOf(0.3f, 0.5f, 0.3f, 0.5f),
             extraWidth = 10.dp,
             maxHeight = 100.dp
         )
@@ -196,12 +211,13 @@ fun ResizableColorStrip(
             ColorStripBackground(
                 colors = colors,
                 weights = weights,
-                heights = weights,
+                heights = arrayListOf(0.3f, 0.6f, 0.2f, 0.4f),
                 maxHeight = stripHeight * 5,
-                extraWidth = 10.dp,
+                extraWidth = 20.dp,
                 modifier = Modifier
-                    .offset(y = -stripHeight)
-                    .blur(10.dp, BlurredEdgeTreatment.Unbounded)
+//                    .offset(y = -stripHeight)
+                    .blur(20.dp, BlurredEdgeTreatment.Unbounded)
+
             )
         }
 
