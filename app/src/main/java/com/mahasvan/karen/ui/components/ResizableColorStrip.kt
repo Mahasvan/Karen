@@ -227,7 +227,8 @@ fun ResizableColorStrip(
                 colors = colors,
                 weights = weights,
                 heights = ellipseHeights,
-                maxHeight = ELLIPSE_MAX_HEIGHT,
+                // Adding phase (0 to 2pi(6.28) dp) adds a slight breathing effect
+                maxHeight = ELLIPSE_MAX_HEIGHT + phase.dp,
                 extraWidth = 30.dp,
                 blurRadius = 30.dp,
                 modifier = Modifier
