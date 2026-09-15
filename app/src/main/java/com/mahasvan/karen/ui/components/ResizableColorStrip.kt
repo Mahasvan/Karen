@@ -21,10 +21,12 @@ import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.lerp
 import com.mahasvan.karen.ui.theme.AssistantTheme
 import kotlin.math.cos
 import kotlin.math.sin
@@ -41,8 +43,10 @@ import kotlin.math.sin
  *    strip's frame.
  *
  * [glowStrength] scales the glow layer's opacity — intended to track speech
- * volume via onRmsChanged. [glowRadius] sets the per-bar glow spread and
- * [glowWidthFraction] the glow layer's width relative to the container.
+ * volume via onRmsChanged. [glowRadius] sets the per-bar glow spread.
+ * [glowWidthFraction] is the single driver for the glow layer's size: it sets
+ * the width relative to the container and, via the same value, stretches the
+ * vertical scale from 2f (at 0) to 3f (at 1).
  */
 @Composable
 fun ResizableColorStrip(
@@ -54,7 +58,10 @@ fun ResizableColorStrip(
 ) {
     val stripHeight = 5.dp
     val stripWidthFraction = 0.7f
-    val baseBlurRadius = 30.dp
+    val baseBlurRadius = 15.dp
+
+    val glowFraction = glowWidthFraction.coerceIn(0f, 1f)
+    val glowScaleY = lerp(2f, 3f, glowFraction)
 
     // Phase animates 0 to 2π and loops every 8 seconds.
     val transition = rememberInfiniteTransition(label = "strip")
@@ -84,13 +91,14 @@ fun ResizableColorStrip(
         modifier = modifier.height(stripHeight),
         contentAlignment = Alignment.Center,
     ) {
+        val roundRadius = stripHeight / 2
         // Base layer (behind): whole strip blurred for a soft halo.
         ColorBarRow(
             colors = colors,
             weights = weights,
             widthFraction = stripWidthFraction,
             modifier = Modifier
-                .clip(RoundedCornerShape(stripHeight / 2))
+                .clip(RoundedCornerShape(topEnd = roundRadius, topStart = roundRadius))
                 .blur(baseBlurRadius),
         )
 
@@ -98,8 +106,10 @@ fun ResizableColorStrip(
         ColorBarRow(
             colors = colors,
             weights = weights,
-            widthFraction = glowWidthFraction.coerceIn(0f, 1f),
-            modifier = Modifier.alpha(glowStrength.coerceIn(0f, 1f)),
+            widthFraction = glowFraction,
+            modifier = Modifier
+                .scale(scaleY = glowScaleY, scaleX = 1f)
+                .alpha(glowStrength.coerceIn(0f, 1f)),
             barModifier = Modifier.blur(
                 glowRadius,
                 edgeTreatment = BlurredEdgeTreatment.Unbounded,

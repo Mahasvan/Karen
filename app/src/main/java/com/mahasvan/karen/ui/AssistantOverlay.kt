@@ -82,7 +82,6 @@ import com.mahasvan.karen.assistant.ConversationItem
 import com.mahasvan.karen.ui.components.AssistantAvatar
 import com.mahasvan.karen.ui.components.BottomActionBar
 import com.mahasvan.karen.ui.components.ConversationStream
-import com.mahasvan.karen.ui.components.GlowingLightBar
 import com.mahasvan.karen.ui.components.ResizableColorStrip
 import com.mahasvan.karen.ui.theme.AppTheme
 import com.mahasvan.karen.ui.theme.AssistantTheme
@@ -320,15 +319,6 @@ fun AssistantOverlay(
                     modifier = Modifier.padding(top = 8.dp, bottom = 8.dp),
                 )
             }
-        }
-
-        AnimatedVisibility(
-            visible = uiState.state == AssistantState.Listening,
-            enter = fadeIn(),
-            exit = fadeOut(),
-            modifier = Modifier.align(Alignment.BottomCenter),
-        ) {
-            GlowingLightBar()
         }
 
         ResizableColorStrip(
