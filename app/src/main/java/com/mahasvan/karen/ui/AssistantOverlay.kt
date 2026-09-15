@@ -322,6 +322,7 @@ fun AssistantOverlay(
         }
 
         ResizableColorStrip(
+            active = uiState.state == AssistantState.Listening,
             colors = AssistantTheme.brandColors,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
