@@ -7,6 +7,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -49,6 +50,14 @@ private const val TOP_WIDTH_FRACTION = 0.7f
 private const val BLUR_WIDTH_FRACTION = 0.9f
 private val BASE_BLUR_RADIUS = 30.dp
 private val MIN_BLUR_RADIUS = 10.dp
+
+// Half-ellipse height: hardcoded ceiling, scaled per-bar by that color's own
+// width (weight) so dominant colors stand taller, and overall by mic-active
+// state. Floored so even a slim bar's ellipse stays visible.
+private val ELLIPSE_MAX_HEIGHT = 70.dp
+private const val MIN_HEIGHT_FRACTION = 0.15f
+private const val REST_HEIGHT_SCALE = 0.35f
+private const val ACTIVE_HEIGHT_SCALE = 1f
 /** Glow progress at which the layer starts fading in; keeps it hidden until it's already blurred. */
 
 /**
@@ -85,6 +94,7 @@ fun HalfEllipse(width: Dp, height: Dp, color: Color) {
             // constraint so this can overdraw past its slot.
             .requiredSize(width = width, height = height)
             .background(color = color, shape = TopHalfEllipseShape)
+//            .border(1.dp, Color.Red)
     )
 }
 
@@ -95,27 +105,28 @@ fun ColorStripBackground(
     weights: List<Float>,
     heights: List<Float>,
     extraWidth: Dp,
+    blurRadius: Dp = 0.dp,
     maxHeight: Dp) {
 
-    // Measure the row so each bar knows its own slot width in Dp — needed to
-    // paint its half-ellipse wider than the slot (below).
     BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
         val rowWidth = maxWidth
-        Row(
-            modifier = Modifier
-                .fillMaxHeight()
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.Bottom,
-        ) {
+        // Running total of weights *before* each index, i.e. each bar's left edge.
+        val leftEdgeWeights = weights.runningFold(0f) { acc, w -> acc + w }
+
+        Box(modifier = Modifier
+            .fillMaxHeight()
+            .fillMaxWidth()) {
             colors.forEachIndexed { index, color ->
                 val slotWidth = rowWidth * weights[index]
+                val leftEdge = rowWidth * leftEdgeWeights[index]
                 Box(
                     modifier = modifier
-                        .weight(weights[index]),
-                    contentAlignment = Alignment.BottomCenter
+                        .align(Alignment.BottomStart)
+                        // Shift left by half the extra width so the overdraw bleeds
+                        // evenly on both sides, including past the strip's own ends.
+                        .offset(x = leftEdge - extraWidth / 2)
+                        .blur(blurRadius, BlurredEdgeTreatment.Unbounded),
                 ) {
-                    // Overdraw past the slot on both sides so blur — which eats
-                    // the shape's edge inward — still reads at the intended width.
                     HalfEllipse(
                         width = slotWidth + extraWidth,
                         height = heights[index].coerceIn(0f, 1f) * maxHeight,
@@ -208,15 +219,20 @@ fun ResizableColorStrip(
                     .height(stripHeight),
             )
 
+            val heightScale = lerp(REST_HEIGHT_SCALE, ACTIVE_HEIGHT_SCALE, glow)
+            val ellipseHeights = weights.map { weight ->
+                ((weight/weights.max()) * heightScale).coerceAtLeast(MIN_HEIGHT_FRACTION)
+            }
             ColorStripBackground(
                 colors = colors,
                 weights = weights,
-                heights = arrayListOf(0.3f, 0.6f, 0.2f, 0.4f),
-                maxHeight = stripHeight * 5,
-                extraWidth = 20.dp,
+                heights = ellipseHeights,
+                maxHeight = ELLIPSE_MAX_HEIGHT,
+                extraWidth = 30.dp,
+                blurRadius = 30.dp,
                 modifier = Modifier
 //                    .offset(y = -stripHeight)
-                    .blur(20.dp, BlurredEdgeTreatment.Unbounded)
+
 
             )
         }

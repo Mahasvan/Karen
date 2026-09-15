@@ -326,7 +326,8 @@ fun AssistantOverlay(
             colors = AssistantTheme.brandColors,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                .fillMaxHeight()
         )
     }
 }
