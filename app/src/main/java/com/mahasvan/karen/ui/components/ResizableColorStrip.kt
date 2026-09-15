@@ -54,9 +54,9 @@ private val MIN_BLUR_RADIUS = 10.dp
 // Half-ellipse height: hardcoded ceiling, scaled per-bar by that color's own
 // width (weight) so dominant colors stand taller, and overall by mic-active
 // state. Floored so even a slim bar's ellipse stays visible.
-private val ELLIPSE_MAX_HEIGHT = 70.dp
-private const val MIN_HEIGHT_FRACTION = 0.15f
-private const val REST_HEIGHT_SCALE = 0.35f
+private val ELLIPSE_MAX_HEIGHT = 50.dp
+private const val MIN_HEIGHT_FRACTION = 0.25f
+private const val REST_HEIGHT_SCALE = 0.50f
 private const val ACTIVE_HEIGHT_SCALE = 1f
 /** Glow progress at which the layer starts fading in; keeps it hidden until it's already blurred. */
 
@@ -135,23 +135,6 @@ fun ColorStripBackground(
                 }
             }
         }
-    }
-}
-
-@Preview
-@Composable
-fun ColorStripBackgroundPreview() {
-
-    Box(Modifier
-        .width(300.dp)
-        .height(200.dp)) {
-        ColorStripBackground(
-            colors = AssistantTheme.brandColors,
-            weights = listOf(0.25f, 0.25f, 0.25f, 0.25f),
-            heights = listOf(0.3f, 0.5f, 0.3f, 0.5f),
-            extraWidth = 10.dp,
-            maxHeight = 100.dp
-        )
     }
 }
 
@@ -278,6 +261,23 @@ private fun ColorBarRow(
                     .background(color)
             )
         }
+    }
+}
+
+@Preview
+@Composable
+fun ColorStripBackgroundPreview() {
+
+    Box(Modifier
+        .width(300.dp)
+        .height(200.dp)) {
+        ColorStripBackground(
+            colors = AssistantTheme.brandColors,
+            weights = listOf(0.35f, 0.25f, 0.25f, 0.25f),
+            heights = listOf(0.3f, 0.5f, 0.3f, 0.5f),
+            extraWidth = 10.dp,
+            maxHeight = 100.dp
+        )
     }
 }
 
