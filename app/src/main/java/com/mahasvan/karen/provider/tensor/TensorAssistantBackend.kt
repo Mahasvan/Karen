@@ -1,6 +1,7 @@
 package com.mahasvan.karen.provider.tensor
 
 import android.content.Context
+import android.os.Build
 import android.util.Log
 import com.google.ai.edge.litertlm.Backend
 import com.google.ai.edge.litertlm.Capabilities
@@ -100,6 +101,7 @@ class TensorAssistantBackend(
             // `No dispatch library found in `, `Detected NPU prefill size: `
             // and `Passed in max_num_tokens (...) with NPU model max sequence length: (...)`.
             Engine.setNativeMinLogSeverity(LogSeverity.VERBOSE)
+            logNpuEnvironment(context)
 
             val engineConfig = EngineConfig(
                 modelPath = modelFile.absolutePath,
@@ -139,6 +141,45 @@ class TensorAssistantBackend(
                             "Check logcat (tag: litert) for dispatch backend or TPU errors.",
                     e,
                 )
+            }
+        }
+
+        /**
+         * Two facts that are otherwise invisible until the engine fails.
+         *
+         * [Build.SOC_MODEL] (API 31+, and minSdk is 31) is the key an AOT model
+         * allowlist is indexed by — see `docs/TENSOR_DEPLOYMENT_NOTES.md` §12.
+         *
+         * The dispatch libraries present in the native library dir decide whether
+         * [Backend.NPU] can initialise at all. None means the runtime was never
+         * delivered; more than one means vendor selection is ambiguous, because
+         * LiteRT loads the first match.
+         */
+        private fun logNpuEnvironment(context: Context) {
+            Log.i(
+                TAG,
+                "Device: model=${Build.MODEL}, soc=${Build.SOC_MODEL}, " +
+                        "socManufacturer=${Build.SOC_MANUFACTURER}",
+            )
+            val libDir = File(context.applicationInfo.nativeLibraryDir)
+            val dispatchLibs = libDir
+                .listFiles { file -> file.name.startsWith("libLiteRtDispatch_") }
+                ?.map { it.name }
+                .orEmpty()
+            when {
+                dispatchLibs.isEmpty() -> Log.w(
+                    TAG,
+                    "No libLiteRtDispatch_*.so in ${libDir.absolutePath} — NPU cannot " +
+                            "initialise. The runtime library was not packaged or delivered.",
+                )
+
+                dispatchLibs.size > 1 -> Log.w(
+                    TAG,
+                    "Multiple dispatch libraries $dispatchLibs — LiteRT loads the first " +
+                            "match, so vendor selection is ambiguous.",
+                )
+
+                else -> Log.i(TAG, "Dispatch library: ${dispatchLibs.single()}")
             }
         }
 
