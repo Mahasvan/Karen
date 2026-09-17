@@ -31,7 +31,6 @@ class AssistantViewModel(
     private var turnJob: Job? = null
 
     override fun onCleared() {
-        super.onCleared()
         backends.close()
     }
 
