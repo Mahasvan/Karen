@@ -27,6 +27,7 @@ import com.mahasvan.karen.assistant.AssistantReply
 import com.mahasvan.karen.assistant.ModelUnavailableException
 import com.mahasvan.karen.assistant.systemInstructionLines
 import com.mahasvan.karen.tools.ToolExecutor
+import com.mahasvan.karen.tools.ToolRegistry
 import com.mahasvan.karen.tools.ToolResult
 import com.mahasvan.karen.tools.calendar.CALENDAR_EVENT_TOOL
 import com.mahasvan.karen.tools.clock.ALARM_TOOL
@@ -183,14 +184,6 @@ class TensorAssistantBackend(
 
                 else -> Log.i(TAG, "Dispatch library: ${dispatchLibs.single()}")
             }
-        }
-
-        /** OS reclaims native memory on process death.
-         * Use releaseEngine() only if memory pressure becomes measurable.
-         * Haven't found a use for this yet. Keeping it here just because. */
-        fun releaseEngine() {
-            sharedEngine?.let { runCatching { it.close() } }
-            sharedEngine = null
         }
 
         /**
