@@ -47,7 +47,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.mahasvan.karen.R
 import com.mahasvan.karen.settings.AppSettings
@@ -58,6 +57,7 @@ import com.mahasvan.karen.settings.RemoteConfig
 import com.mahasvan.karen.ui.theme.AppTheme
 import com.mahasvan.karen.ui.theme.AssistantTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.tooling.preview.PreviewLightDark
 
 /**
  * Settings page. Appearance and assistant backend are wired; on-device model and
@@ -371,7 +371,7 @@ private fun BrandColorDots() {
     }
 }
 
-@Preview(showBackground = true)
+@PreviewLightDark()
 @Composable
 private fun SettingsScreenPreview() {
     AppTheme {

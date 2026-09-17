@@ -81,17 +81,17 @@ private val LightColorScheme = lightColorScheme(
 @Composable
 private fun wallpaperBrandColors(darkTheme: Boolean): List<Color> = if (darkTheme) {
     listOf(
-        colorResource(android.R.color.system_accent1_200),
+        colorResource(android.R.color.system_accent1_100),
         colorResource(android.R.color.system_accent3_200),
         colorResource(android.R.color.system_accent2_200),
         colorResource(android.R.color.system_accent1_400),
     )
 } else {
     listOf(
-        colorResource(android.R.color.system_accent1_600),
-        colorResource(android.R.color.system_accent3_600),
-        colorResource(android.R.color.system_accent2_600),
-        colorResource(android.R.color.system_accent1_400),
+        colorResource(android.R.color.system_accent1_700),
+        colorResource(android.R.color.system_accent3_700),
+        colorResource(android.R.color.system_accent2_700),
+        colorResource(android.R.color.system_accent1_300),
     )
 }
 
