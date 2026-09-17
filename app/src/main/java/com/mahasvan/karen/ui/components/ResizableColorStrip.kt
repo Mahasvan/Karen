@@ -7,8 +7,6 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
@@ -18,7 +16,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,15 +24,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.BlurredEdgeTreatment
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -47,17 +41,16 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 private const val TOP_WIDTH_FRACTION = 0.7f
-private const val BLUR_WIDTH_FRACTION = 0.9f
 private val BASE_BLUR_RADIUS = 30.dp
 private val MIN_BLUR_RADIUS = 10.dp
 
-// Half-ellipse height: hardcoded ceiling, scaled per-bar by that color's own
-// width (weight) so dominant colors stand taller, and overall by mic-active
-// state. Floored so even a slim bar's ellipse stays visible.
 private val ELLIPSE_MAX_HEIGHT = 50.dp
 private const val MIN_HEIGHT_FRACTION = 0.25f
 private const val REST_HEIGHT_SCALE = 0.50f
-private const val ACTIVE_HEIGHT_SCALE = 1f
+private const val ACTIVE_HEIGHT_SCALE = 0.25f
+private const val REST_OVERDRAW_PX = 30
+private const val ACTIVE_OVERDRAW_PX = 50
+
 /** Glow progress at which the layer starts fading in; keeps it hidden until it's already blurred. */
 
 /**
@@ -153,8 +146,7 @@ fun ResizableColorStrip(
         label = "glow",
     )
     val blurRadius = lerp(MIN_BLUR_RADIUS, BASE_BLUR_RADIUS, glow)
-    val blurAlpha = lerp(0f, 1f, glow)
-
+    val overDrawSize = lerp(REST_OVERDRAW_PX, ACTIVE_OVERDRAW_PX, glow)
     // Phase animates 0 to 2π and loops every 8 seconds.
     val transition = rememberInfiniteTransition(label = "strip")
     val phase by transition.animateFloat(
@@ -212,7 +204,7 @@ fun ResizableColorStrip(
                 heights = ellipseHeights,
                 // Adding phase (0 to 2pi(6.28) dp) adds a slight breathing effect
                 maxHeight = ELLIPSE_MAX_HEIGHT + phase.dp,
-                extraWidth = 30.dp,
+                extraWidth = overDrawSize.dp,
                 blurRadius = 30.dp,
                 modifier = Modifier
 //                    .offset(y = -stripHeight)
@@ -283,7 +275,7 @@ fun ColorStripBackgroundPreview() {
 
 @Preview(showBackground = true, backgroundColor = 0xFF000000)
 @Composable
-private fun ResizableColorStripPreview() {
+private fun ResizableColorStripInactivePreview() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -293,6 +285,27 @@ private fun ResizableColorStripPreview() {
     ) {
         ResizableColorStrip(
             active = false,
+            colors = AssistantTheme.brandColors,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(100.dp),
+        )
+    }
+}
+
+
+@Preview(showBackground = true, backgroundColor = 0xFF000000)
+@Composable
+private fun ResizableColorStripActivePreview() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.Black)
+            .padding(vertical = 48.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        ResizableColorStrip(
+            active = true,
             colors = AssistantTheme.brandColors,
             modifier = Modifier
                 .fillMaxWidth()
