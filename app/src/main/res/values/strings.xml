@@ -18,12 +18,12 @@
     <string name="settings_material_you_summary">Match the palette to your wallpaper. Off uses the Google Assistant brand colours.</string>
 
     <!-- Assistant backend -->
-    <string name="settings_backend">Assistant backend</string>
-    <string name="settings_backend_on_device">On-device</string>
+    <string name="settings_backend">LLM Provider</string>
+    <string name="settings_backend_on_device">On-Device</string>
     <string name="settings_backend_on_device_summary">Runs locally on the device NPU. Private and works offline.</string>
     <string name="settings_backend_remote">Remote</string>
     <string name="settings_backend_remote_summary">Sends your prompts to a hosted model over the network.</string>
-    <string name="settings_remote_note">Any OpenAI-compatible provider will work — OpenAI, Groq, Together, OpenRouter, or a local server such as Ollama, LM Studio, or llama.cpp.</string>
+    <string name="settings_remote_note">Supports any OpenAI-compatible provider, like Ollama or LMStudio.</string>
     <string name="settings_remote_base_url">Base URL</string>
     <string name="settings_remote_base_url_hint">Include the version path, e.g. https://api.openai.com/v1</string>
     <string name="settings_remote_api_key">API key</string>
