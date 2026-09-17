@@ -71,6 +71,7 @@ dependencies {
     implementation(libs.richtext)
     implementation(libs.richtext.ui)
     testImplementation(libs.junit)
+    testImplementation(libs.kotlin.reflect)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)

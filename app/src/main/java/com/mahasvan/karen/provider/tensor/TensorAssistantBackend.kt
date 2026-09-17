@@ -25,7 +25,7 @@ import com.mahasvan.karen.R
 import com.mahasvan.karen.assistant.AssistantBackend
 import com.mahasvan.karen.assistant.AssistantReply
 import com.mahasvan.karen.assistant.ModelUnavailableException
-import com.mahasvan.karen.tools.ToolRegistry
+import com.mahasvan.karen.tools.ToolExecutor
 import com.mahasvan.karen.tools.ToolResult
 import com.mahasvan.karen.tools.calendar.CALENDAR_EVENT_TOOL
 import com.mahasvan.karen.tools.clock.ALARM_TOOL
@@ -380,13 +380,18 @@ class TensorAssistantBackend(
     }
 
     /**
-     * Bridge from LiteRT-LM's reflection-based tool calling to [ToolRegistry].
+     * Bridge from LiteRT-LM's reflection-based tool calling to [ToolExecutor].
      *
      * Each method name converts camelCase → snake_case for the model (`setAlarm` →
      * `set_alarm`). Methods receive typed params, build the arguments map, and
-     * delegate to [ToolRegistry.tool] + [Tool.execute][com.mahasvan.karen.tools.Tool.execute],
-     * which validates, fires the intent, and returns a [ToolResult]. The full result
-     * is queued in [completedTools] for [respond] to emit after the text stream.
+     * delegate to [ToolExecutor.execute], which validates, fires the intent, and
+     * returns a [ToolResult]. The full result is queued in [completedTools] for
+     * [respond] to emit after the text stream.
+     *
+     * The `@Tool`/`@ToolParam` annotations below are a hand-written copy of
+     * [ToolRegistry]'s schema — annotations are compile-time and cannot be
+     * generated from data. `AssistantToolSetParityTest` guards against the two
+     * drifting.
      *
      * The method's return value (a `Map<String, String>`) is what LiteRT-LM
      * serializes back to the model as the tool response — a simple
@@ -446,19 +451,7 @@ class TensorAssistantBackend(
             mapOf("target" to target),
         )
 
-        private fun execute(toolName: String, arguments: Map<String, String>): Map<String, String> {
-            val tool = ToolRegistry.tool(toolName)
-                ?: return mapOf("status" to "error", "message" to "Unknown tool: $toolName")
-            // The tool validates, fires the intent, and returns a ToolResult. The full
-            // result is queued for the UI; the return value is the simple status the
-            // model sees (see class docstring for why these are separate).
-            val result = tool.execute(context, arguments)
-            completedTools.add(result)
-            return if (result.success) {
-                mapOf("status" to "success")
-            } else {
-                mapOf("status" to "error", "message" to result.message)
-            }
-        }
+        private fun execute(toolName: String, arguments: Map<String, String>): Map<String, String> =
+            ToolExecutor.execute(context, toolName, arguments, onResult = completedTools::add)
     }
 }

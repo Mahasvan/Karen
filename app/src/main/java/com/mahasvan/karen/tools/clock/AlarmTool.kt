@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import com.mahasvan.karen.tools.Tool
 import com.mahasvan.karen.tools.ToolCard
+import com.mahasvan.karen.tools.ToolParamType
 import com.mahasvan.karen.tools.ToolParameter
 import com.mahasvan.karen.tools.ToolResult
 import com.mahasvan.karen.ui.components.actioncards.SimpleActionCard
@@ -22,10 +23,10 @@ object AlarmTool : Tool {
 
     override val description =
         "Set an alarm at a specific time of day on the user's device."
-
+    // todo: overhaul the alarm tool
     override val parameters = listOf(
-        ToolParameter("hour", "Hour in 24-hour form, 0-23.", required = true),
-        ToolParameter("minute", "Minute past the hour, 0-59. Defaults to 0.", required = false),
+        ToolParameter("hour", "Hour in 24-hour form, 0-23.", required = true, type = ToolParamType.Integer),
+        ToolParameter("minute", "Minute past the hour, 0-59. Default 0.", required = false, type = ToolParamType.Integer),
         ToolParameter("label", "Short name shown on the alarm.", required = false),
     )
 

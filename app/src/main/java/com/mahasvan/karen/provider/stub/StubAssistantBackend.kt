@@ -14,7 +14,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.flow
-import java.util.Calendar
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
@@ -122,18 +123,19 @@ class StubAssistantBackend(
             .trim()
             .ifBlank { "New event" }
             .replaceFirstChar(Char::uppercase)
-        val start = Calendar.getInstance().apply {
-            add(Calendar.HOUR_OF_DAY, 1)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-        }.timeInMillis
+        val start = LocalDateTime.now()
+            .plusHours(1)
+            .withMinute(0)
+            .withSecond(0)
+            .withNano(0)
+        val end = start.plusHours(1)
         emit(AssistantReply.Text("Here's the event"))
         route(
             CALENDAR_EVENT_TOOL,
             mapOf(
                 "title" to title,
-                "start_millis" to start.toString(),
-                "end_millis" to (start + ONE_HOUR_MILLIS).toString(),
+                "start_time" to start.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                "end_time" to end.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
             )
         )
     }
@@ -157,8 +159,6 @@ class StubAssistantBackend(
     }
 
     private companion object {
-        const val ONE_HOUR_MILLIS = 3_600_000L
-
         val DIGITS = Regex("""[+\d][\d\s\-]{5,}""")
         val DURATION = Regex("""(\d+)\s*(hour|hr|minute|min|second|sec)""")
         val CLOCK_TIME = Regex("""(\d{1,2})(?::(\d{2}))?\s*(am|pm)?""")

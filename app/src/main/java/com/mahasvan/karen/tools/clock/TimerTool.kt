@@ -12,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import com.mahasvan.karen.tools.Tool
 import com.mahasvan.karen.tools.ToolCard
+import com.mahasvan.karen.tools.ToolParamType
 import com.mahasvan.karen.tools.ToolParameter
 import com.mahasvan.karen.tools.ToolResult
 import com.mahasvan.karen.ui.components.actioncards.SimpleActionCard
@@ -31,8 +32,8 @@ object TimerTool : Tool {
     override val description = "Start a countdown timer on the user's device."
 
     override val parameters = listOf(
-        ToolParameter("seconds", "Duration in seconds, 1-86400.", required = true),
-        ToolParameter("label", "Short name shown on the timer.", required = false),
+        ToolParameter("seconds", "Duration in seconds, 1-86400.", required = true, type = ToolParamType.Integer),
+        ToolParameter("label", "Short name shown on the timer. Use empty string if not specified.", required = false),
     )
 
     override fun execute(context: Context, arguments: Map<String, String>): ToolResult {

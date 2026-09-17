@@ -47,11 +47,15 @@ interface Tool {
     }
 }
 
+/** JSON Schema primitive types a tool parameter can advertise. */
+enum class ToolParamType { String, Integer, Number, Boolean }
+
 @Immutable
 data class ToolParameter(
     val name: String,
     val description: String,
     val required: Boolean,
+    val type: ToolParamType = ToolParamType.String,
 )
 
 /**
