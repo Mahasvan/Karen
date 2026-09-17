@@ -65,10 +65,16 @@ class OpenAiAssistantBackend(
         var emittedReply = false
 
         repeat(MAX_TOOL_ROUNDS) {
-            val assistantMessage = client.chatCompletion(withSystemPrompt(pending), tools)
+            var streamed = ""
+            val assistantMessage = client.chatCompletion(withSystemPrompt(pending), tools) { part ->
+                streamed += part
+                emit(reply(streamed, responseId))
+                emittedReply = true
+            }
             pending.put(assistantMessage)
 
-            // Content can arrive alongside `tool_calls`. Emit text before executing the tools.
+            // A non-streamed content field (some servers buffer it whole) still
+            // needs an emit; a streamed one re-emitting identical text is a no-op.
             assistantMessage.optString("content").takeIf { it.isNotBlank() }?.let {
                 emit(reply(it, responseId))
                 emittedReply = true

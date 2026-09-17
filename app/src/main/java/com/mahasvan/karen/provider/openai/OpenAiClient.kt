@@ -5,6 +5,7 @@ import com.mahasvan.karen.settings.RemoteConfig
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
+import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -31,24 +32,44 @@ class OpenAiClient(private val config: RemoteConfig) {
     }
 
     /**
-     * One chat-completions round trip. Returns the assistant message verbatim so
-     * the caller can append it to history with its `tool_calls` intact.
+     * One streaming chat-completions round trip. [onDelta] is called with each
+     * content fragment the moment the server sends it so the UI can grow one
+     * bubble; the returned message is the fully assembled result — identical
+     * shape to a non-streaming response — so the caller can append it to
+     * history with its `tool_calls` intact.
      */
-    fun chatCompletion(messages: JSONArray, tools: JSONArray): JSONObject {
+    suspend fun chatCompletion(
+        messages: JSONArray,
+        tools: JSONArray,
+        onDelta: suspend (String) -> Unit = {},
+    ): JSONObject {
         val payload = JSONObject()
             .put("model", config.model)
             .put("messages", messages)
+            .put("stream", true)
         if (tools.length() > 0) payload.put("tools", tools)
 
-        val choices = request("chat/completions", payload).optJSONArray("choices")
-            ?: throw IOException("Response had no 'choices' array")
-        return choices.optJSONObject(0)?.optJSONObject("message")
-            ?: throw IOException("Response had no assistant message")
+        val connection = open("chat/completions", payload)
+        return try {
+            connection.sendAndCheckStatus(payload)
+            readSse(connection.inputStream, onDelta)
+        } finally {
+            connection.disconnect()
+        }
     }
 
     private fun request(path: String, body: JSONObject?): JSONObject {
-        val url = URL("${config.baseUrl.trimEnd('/')}/$path")
-        val connection = (url.openConnection() as HttpURLConnection).apply {
+        val connection = open(path, body)
+        return try {
+            connection.sendAndCheckStatus(body)
+            JSONObject(connection.inputStream.bufferedReader().use { it.readText() })
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    private fun open(path: String, body: JSONObject?): HttpURLConnection =
+        (URL("${config.baseUrl.trimEnd('/')}/$path").openConnection() as HttpURLConnection).apply {
             requestMethod = if (body == null) "GET" else "POST"
             connectTimeout = CONNECT_TIMEOUT_MILLIS
             readTimeout = READ_TIMEOUT_MILLIS
@@ -62,15 +83,70 @@ class OpenAiClient(private val config: RemoteConfig) {
                 setRequestProperty("Content-Type", "application/json")
             }
         }
-        return try {
-            body?.let { connection.outputStream.use { out -> out.write(it.toString().toByteArray()) } }
-            val status = connection.responseCode
-            if (status !in 200..299) throw errorFor(status, connection.readErrorBody())
-            JSONObject(connection.inputStream.bufferedReader().use { it.readText() })
-        } finally {
-            connection.disconnect()
-        }
+
+    /** Writes the request body (if any), then fails fast on non-2xx before the body stream is opened. */
+    private fun HttpURLConnection.sendAndCheckStatus(body: JSONObject?) {
+        body?.let { outputStream.use { out -> out.write(it.toString().toByteArray()) } }
+        val status = responseCode
+        if (status !in 200..299) throw errorFor(status, readErrorBody())
     }
+
+    /**
+     * Reads a server-sent-events stream one line at a time as bytes arrive.
+     * Tool-call arguments arrive fragmented across chunks and are concatenated
+     * per call index; the deltas never contain the full message, which is why
+     * the caller's history needs the reassembled return value.
+     */
+    private suspend fun readSse(input: InputStream, onDelta: suspend (String) -> Unit): JSONObject =
+        input.bufferedReader().use { reader ->
+            val content = StringBuilder()
+            val toolCalls = sortedMapOf<Int, JSONObject>()
+
+            while (true) {
+                val line = reader.readLine() ?: break
+                if (!line.startsWith("data:")) continue
+                val data = line.removePrefix("data:").trim()
+                if (data == "[DONE]") break
+                val delta = JSONObject(data)
+                    .optJSONArray("choices")
+                    ?.optJSONObject(0)
+                    ?.optJSONObject("delta")
+                    ?: continue
+
+                if (!delta.isNull("content")) {
+                    val part = delta.getString("content")
+                    if (part.isNotEmpty()) {
+                        content.append(part)
+                        onDelta(part)
+                    }
+                }
+
+                delta.optJSONArray("tool_calls")?.let { fragments ->
+                    for (i in 0 until fragments.length()) {
+                        val fragment = fragments.optJSONObject(i) ?: continue
+                        val index = fragment.optInt("index", 0)
+                        val call = toolCalls.getOrPut(index) {
+                            JSONObject()
+                                .put("type", "function")
+                                .put("function", JSONObject().put("arguments", ""))
+                        }
+                        fragment.optString("id").takeIf { it.isNotBlank() }?.let { call.put("id", it) }
+                        fragment.optJSONObject("function")?.let { fnFragment ->
+                            val fn = call.getJSONObject("function")
+                            fnFragment.optString("name").takeIf { it.isNotBlank() }?.let { fn.put("name", it) }
+                            fn.put("arguments", fn.getString("arguments") + fnFragment.optString("arguments"))
+                        }
+                    }
+                }
+            }
+
+            JSONObject().put("role", "assistant").apply {
+                if (content.isNotEmpty()) put("content", content.toString())
+                if (toolCalls.isNotEmpty()) {
+                    put("tool_calls", JSONArray().also { calls -> toolCalls.forEach { (_, call) -> calls.put(call) } })
+                }
+            }
+        }
 
     private fun HttpURLConnection.readErrorBody(): String =
         runCatching { errorStream?.bufferedReader()?.use { it.readText() }.orEmpty() }.getOrDefault("")
