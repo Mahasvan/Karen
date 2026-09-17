@@ -50,6 +50,7 @@ class ModelUnavailableException(
 
 internal fun Throwable.toAssistantError(): AssistantError = when (this) {
     is ModelUnavailableException -> AssistantError.ModelUnavailable(message)
+    is SpeechException -> AssistantError.SpeechUnavailable(failure)
     is IOException -> AssistantError.Network
     else -> AssistantError.Unknown(message)
 }

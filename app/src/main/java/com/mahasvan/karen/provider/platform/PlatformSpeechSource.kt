@@ -10,8 +10,9 @@ import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.util.Log
-import android.widget.Toast
 import com.mahasvan.karen.assistant.SpeechEvent
+import com.mahasvan.karen.assistant.SpeechException
+import com.mahasvan.karen.assistant.SpeechFailure
 import com.mahasvan.karen.assistant.SpeechSource
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -37,14 +38,12 @@ class PlatformSpeechSource(private val context: Context) : SpeechSource {
 
         if (!SpeechRecognizer.isRecognitionAvailable(context)) {
             Log.w(TAG, "Speech recognition service not available on this device")
-            mainHandler.post {
-                Toast.makeText(
-                    context,
+            channel.close(
+                SpeechException(
+                    SpeechFailure.ServiceUnavailable,
                     "Speech recognition is not available on this device",
-                    Toast.LENGTH_LONG,
-                ).show()
-            }
-            channel.close()
+                ),
+            )
             return@callbackFlow
         }
 
@@ -78,21 +77,14 @@ class PlatformSpeechSource(private val context: Context) : SpeechSource {
 
             override fun onError(error: Int) {
                 Log.w(TAG, "onError: ${errorName(error)} ($error)")
-                val message = when (error) {
-                    SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS ->
-                        "Microphone permission is required for voice input"
+                when (error) {
+                    // The user said nothing; not an error. Completing normally lets the
+                    // ViewModel go Idle silently instead of surfacing an ErrorRow.
+                    SpeechRecognizer.ERROR_NO_MATCH,
+                    SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> channel.close()
 
-                    SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE ->
-                        "Speech recognition language pack not available. Download it in Settings → System → Keyboard → Voice typing"
-
-                    else -> null
+                    else -> channel.close(error.toSpeechException())
                 }
-                if (message != null) {
-                    mainHandler.post {
-                        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
-                    }
-                }
-                channel.close()
             }
 
             override fun onPartialResults(partialResults: Bundle?) {
@@ -171,6 +163,38 @@ class PlatformSpeechSource(private val context: Context) : SpeechSource {
             }
         }
     }
+}
+
+private fun Int.toSpeechException(): SpeechException = when (this) {
+    SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> SpeechException(
+        SpeechFailure.PermissionDenied,
+        "Microphone permission is required for voice input",
+    )
+
+    SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE,
+    SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED -> SpeechException(
+        SpeechFailure.LanguageUnavailable,
+        "Speech recognition language pack not available",
+    )
+
+    SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> SpeechException(
+        SpeechFailure.ServiceUnavailable,
+        "Speech recognizer is busy",
+    )
+
+    SpeechRecognizer.ERROR_SERVER,
+    SpeechRecognizer.ERROR_SERVER_DISCONNECTED -> SpeechException(
+        SpeechFailure.ServiceUnavailable,
+        "Speech recognition server is unavailable",
+    )
+
+    SpeechRecognizer.ERROR_NETWORK,
+    SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> SpeechException(
+        SpeechFailure.Network,
+        "Couldn't reach the speech recognition service",
+    )
+
+    else -> SpeechException(SpeechFailure.Unknown, "Speech recognition failed: ${errorName(this)}")
 }
 
 private fun errorName(error: Int): String = when (error) {

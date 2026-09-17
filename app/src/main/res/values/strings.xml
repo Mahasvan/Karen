@@ -37,4 +37,7 @@
     <string name="error_unknown">Something went wrong.</string>
     <string name="error_retry">Try again</string>
     <string name="assistant_fallback_reply">I didn\'t catch that. Could you rephrase?</string>
+    <string name="error_speech_permission">Microphone permission is required for voice input.</string>
+    <string name="error_speech_language">Speech recognition language pack not available. Download it in Settings → System → Keyboard → Voice typing.</string>
+    <string name="error_speech_unavailable">Speech recognition isn\'t available right now.</string>
 </resources>

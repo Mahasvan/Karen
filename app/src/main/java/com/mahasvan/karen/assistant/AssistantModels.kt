@@ -63,6 +63,20 @@ sealed interface AssistantError {
     data class Unknown(val detail: String?) : AssistantError {
         override val recoverable: Boolean get() = true
     }
+
+    /**
+     * Speech recognition failed. [failure] picks the copy the UI shows;
+     * permission and language pack issues need the user to act elsewhere, so
+     * retrying the same recording cannot help.
+     */
+    @Immutable
+    data class SpeechUnavailable(val failure: SpeechFailure) : AssistantError {
+        override val recoverable: Boolean
+            get() = when (failure) {
+                SpeechFailure.PermissionDenied, SpeechFailure.LanguageUnavailable -> false
+                SpeechFailure.ServiceUnavailable, SpeechFailure.Network, SpeechFailure.Unknown -> true
+            }
+    }
 }
 
 enum class AssistantState { Idle, Listening, Processing, DisplayingResult, Error }

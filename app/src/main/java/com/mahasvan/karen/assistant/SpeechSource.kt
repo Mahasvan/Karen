@@ -27,3 +27,13 @@ sealed interface SpeechEvent {
     data class Amplitude(val rmsdB: Float) : SpeechEvent
 
 }
+
+/**
+ * Why [SpeechSource.transcribe] failed, in terms the UI can act on. `NO_MATCH` and
+ * `SPEECH_TIMEOUT` are deliberately not represented here — those mean "the user said
+ * nothing" and complete the flow normally rather than throwing.
+ */
+enum class SpeechFailure { PermissionDenied, LanguageUnavailable, ServiceUnavailable, Network, Unknown }
+
+/** Thrown from [SpeechSource.transcribe] for anything beyond plain silence. */
+class SpeechException(val failure: SpeechFailure, message: String) : Exception(message)

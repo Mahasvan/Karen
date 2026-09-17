@@ -79,6 +79,7 @@ import com.mahasvan.karen.assistant.AssistantError
 import com.mahasvan.karen.assistant.AssistantState
 import com.mahasvan.karen.assistant.AssistantUiState
 import com.mahasvan.karen.assistant.ConversationItem
+import com.mahasvan.karen.assistant.SpeechFailure
 import com.mahasvan.karen.ui.components.AssistantAvatar
 import com.mahasvan.karen.ui.components.BottomActionBar
 import com.mahasvan.karen.ui.components.ConversationStream
@@ -367,6 +368,14 @@ private fun AssistantError.message(): String = when (this) {
     is AssistantError.Unknown -> detail
         ?.takeIf { it.isNotBlank() }
         ?: stringResource(R.string.error_unknown)
+
+    is AssistantError.SpeechUnavailable -> when (failure) {
+        SpeechFailure.PermissionDenied -> stringResource(R.string.error_speech_permission)
+        SpeechFailure.LanguageUnavailable -> stringResource(R.string.error_speech_language)
+        SpeechFailure.ServiceUnavailable,
+        SpeechFailure.Network,
+        SpeechFailure.Unknown -> stringResource(R.string.error_speech_unavailable)
+    }
 }
 
 @Composable
