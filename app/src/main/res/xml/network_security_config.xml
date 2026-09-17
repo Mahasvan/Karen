@@ -2,8 +2,9 @@
 <!--
     Allow plain-HTTP servers for OpenAI-compatible providers: Ollama, LM Studio, etc.
 -->
-<network-security-config>
-    <base-config cleartextTrafficPermitted="true">
+<network-security-config xmlns:tools="http://schemas.android.com/tools">
+    <base-config cleartextTrafficPermitted="true"
+        tools:ignore="InsecureBaseConfiguration">
         <trust-anchors>
             <certificates src="system" />
         </trust-anchors>
