@@ -38,10 +38,15 @@ class MainActivity : ComponentActivity() {
 
                 if (showSettings) {
                     BackHandler { showSettings = false }
+                    val connection by settingsViewModel.connection.collectAsStateWithLifecycle()
                     SettingsScreen(
                         settings = loaded,
                         onColorThemeChange = settingsViewModel::setColorTheme,
                         onBack = { showSettings = false },
+                        connection = connection,
+                        onBackendChange = settingsViewModel::setBackend,
+                        onTestConnection = settingsViewModel::testAndSaveRemote,
+                        onModelChange = settingsViewModel::setRemoteModel,
                     )
                 } else {
                     val uiState by viewModel.uiState.collectAsStateWithLifecycle()

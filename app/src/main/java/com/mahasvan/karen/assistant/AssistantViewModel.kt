@@ -6,8 +6,9 @@ import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.AP
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.mahasvan.karen.provider.AssistantBackendProvider
 import com.mahasvan.karen.provider.platform.PlatformSpeechSource
-import com.mahasvan.karen.provider.tensor.TensorAssistantBackend
+import com.mahasvan.karen.settings.SettingsRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
@@ -18,7 +19,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class AssistantViewModel(
-    private val backend: AssistantBackend,
+    private val backends: AssistantBackendProvider,
     private val speech: SpeechSource,
 ) : ViewModel() {
 
@@ -31,7 +32,7 @@ class AssistantViewModel(
 
     override fun onCleared() {
         super.onCleared()
-        backend.close()
+        backends.close()
     }
 
     fun toggleMicrophone() {
@@ -65,9 +66,8 @@ class AssistantViewModel(
      * owns history and therefore owns the retry.
      */
     fun retry() {
-        val replies = backend.retry() ?: return
         _uiState.update { it.copy(state = AssistantState.Processing, error = null) }
-        runTurn(replies)
+        runTurn { backends.get().retry() }
     }
 
     private fun beginTurn(query: String) {
@@ -80,14 +80,25 @@ class AssistantViewModel(
                 conversation = it.conversation + ConversationItem.UserQuery(nextId++, query),
             )
         }
-        runTurn(backend.respond(query))
+        runTurn { backends.get().respond(query) }
     }
 
-    private fun runTurn(replies: Flow<AssistantReply>) {
+    /**
+     * [replies] is resolved inside the turn's coroutine because picking a backend
+     * reads persisted settings. A null result means there is nothing to replay —
+     * reachable when the backend was swapped since the failed turn, since the new
+     * one holds no prompt to retry — so the turn just ends.
+     */
+    private fun runTurn(replies: suspend () -> Flow<AssistantReply>?) {
         turnJob?.cancel()
         turnJob = viewModelScope.launch {
             try {
-                replies.collect { reply ->
+                val flow = replies()
+                if (flow == null) {
+                    _uiState.update { it.copy(state = AssistantState.Idle) }
+                    return@launch
+                }
+                flow.collect { reply ->
                     when (reply) {
                         is AssistantReply.Text -> appendOrUpdateText(reply)
                         is AssistantReply.Card ->
@@ -205,7 +216,7 @@ class AssistantViewModel(
             initializer {
                 val app = this[APPLICATION_KEY] as Application
                 AssistantViewModel(
-                    TensorAssistantBackend(app, TensorAssistantBackend.defaultModelFile(app)),
+                    AssistantBackendProvider(app, SettingsRepository(app)),
                     PlatformSpeechSource(app),
                 )
             }

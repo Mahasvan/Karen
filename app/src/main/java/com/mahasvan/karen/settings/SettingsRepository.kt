@@ -31,8 +31,15 @@ class SettingsRepository(context: Context) {
         // taking the whole UI down; anything else is a real bug.
         .catch { e -> if (e is IOException) emit(emptyPreferences()) else throw e }
         .map { prefs ->
+            val defaults = RemoteConfig()
             AppSettings(
                 colorTheme = prefs.readEnum(Keys.COLOR_THEME, ColorTheme.MaterialYou),
+                backend = prefs.readEnum(Keys.BACKEND, BackendChoice.OnDevice),
+                remote = RemoteConfig(
+                    baseUrl = prefs[Keys.REMOTE_BASE_URL] ?: defaults.baseUrl,
+                    apiKey = prefs[Keys.REMOTE_API_KEY] ?: defaults.apiKey,
+                    model = prefs[Keys.REMOTE_MODEL] ?: defaults.model,
+                ),
             )
         }
 
@@ -40,8 +47,28 @@ class SettingsRepository(context: Context) {
         dataStore.edit { it[Keys.COLOR_THEME] = theme.name }
     }
 
+    suspend fun setBackend(backend: BackendChoice) {
+        dataStore.edit { it[Keys.BACKEND] = backend.name }
+    }
+
+    /** Written as a unit: a half-applied endpoint change is never a valid config. */
+    suspend fun setRemoteEndpoint(baseUrl: String, apiKey: String) {
+        dataStore.edit {
+            it[Keys.REMOTE_BASE_URL] = baseUrl
+            it[Keys.REMOTE_API_KEY] = apiKey
+        }
+    }
+
+    suspend fun setRemoteModel(model: String) {
+        dataStore.edit { it[Keys.REMOTE_MODEL] = model }
+    }
+
     private object Keys {
         val COLOR_THEME = stringPreferencesKey("color_theme")
+        val BACKEND = stringPreferencesKey("backend")
+        val REMOTE_BASE_URL = stringPreferencesKey("remote_base_url")
+        val REMOTE_API_KEY = stringPreferencesKey("remote_api_key")
+        val REMOTE_MODEL = stringPreferencesKey("remote_model")
     }
 }
 

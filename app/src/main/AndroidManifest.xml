@@ -3,6 +3,8 @@
 
     <uses-permission android:name="com.android.alarm.permission.SET_ALARM" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Only used by the remote (OpenAI-compatible) backend; the on-device one never leaves the device. -->
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <uses-feature android:name="android.hardware.npu" android:required="false" />
 

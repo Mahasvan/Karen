@@ -17,6 +17,22 @@
     <string name="settings_material_you">Material You colours</string>
     <string name="settings_material_you_summary">Match the palette to your wallpaper. Off uses the Google Assistant brand colours.</string>
 
+    <!-- Assistant backend -->
+    <string name="settings_backend">Assistant backend</string>
+    <string name="settings_backend_on_device">On-device</string>
+    <string name="settings_backend_on_device_summary">Runs locally on the device NPU. Private and works offline.</string>
+    <string name="settings_backend_remote">Remote</string>
+    <string name="settings_backend_remote_summary">Sends your prompts to a hosted model over the network.</string>
+    <string name="settings_remote_note">Any OpenAI-compatible provider will work — OpenAI, Groq, Together, OpenRouter, or a local server such as Ollama, LM Studio, or llama.cpp.</string>
+    <string name="settings_remote_base_url">Base URL</string>
+    <string name="settings_remote_base_url_hint">Include the version path, e.g. https://api.openai.com/v1</string>
+    <string name="settings_remote_api_key">API key</string>
+    <string name="settings_remote_api_key_hint">Leave empty for local servers that need no auth.</string>
+    <string name="settings_remote_test">Test &amp; save</string>
+    <string name="settings_remote_model">Model</string>
+    <string name="settings_remote_model_none">No model selected</string>
+    <string name="settings_remote_model_hint">Test the connection to load available models.</string>
+
     <!-- Landing -->
     <string name="try_saying">Try saying</string>
 
@@ -40,4 +56,9 @@
     <string name="error_speech_permission">Microphone permission is required for voice input.</string>
     <string name="error_speech_language">Speech recognition language pack not available. Download it in Settings → System → Keyboard → Voice typing.</string>
     <string name="error_speech_unavailable">Speech recognition isn\'t available right now.</string>
+
+    <plurals name="settings_remote_connected">
+        <item quantity="one">Connected — %d model</item>
+        <item quantity="other">Connected — %d models</item>
+    </plurals>
 </resources>

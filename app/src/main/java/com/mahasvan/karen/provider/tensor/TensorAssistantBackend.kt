@@ -25,6 +25,7 @@ import com.mahasvan.karen.R
 import com.mahasvan.karen.assistant.AssistantBackend
 import com.mahasvan.karen.assistant.AssistantReply
 import com.mahasvan.karen.assistant.ModelUnavailableException
+import com.mahasvan.karen.assistant.systemInstructionLines
 import com.mahasvan.karen.tools.ToolExecutor
 import com.mahasvan.karen.tools.ToolResult
 import com.mahasvan.karen.tools.calendar.CALENDAR_EVENT_TOOL
@@ -38,8 +39,6 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import java.io.File
 import java.io.IOException
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.util.concurrent.ConcurrentLinkedQueue
 
 private const val TAG = "TensorAssistantBackend"
@@ -360,18 +359,8 @@ class TensorAssistantBackend(
      * (calling) must be confirmed through conversation first; non-sensitive tools
      * (alarms, timers, calendar events) are called directly.
      */
-    private fun buildSystemInstruction(): Contents {
-        val now = LocalDateTime.now()
-        val curDateTimeString = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"))
-        val dayOfWeekString = now.format(DateTimeFormatter.ofPattern("EEEE"))
-        return Contents.of(
-            listOf(
-                "You are a helpful, concise assistant. You can control the device's clock, " +
-                        "calendar, and dialer through function calls.",
-                "Current date and time: $curDateTimeString ($dayOfWeekString).",
-            ).map { Content.Text(it) }
-        )
-    }
+    private fun buildSystemInstruction(): Contents =
+        Contents.of(systemInstructionLines().map { Content.Text(it) })
 
     /** Closes the conversation only. The shared engine persists across Activity destruction. */
     override fun close() {
@@ -413,8 +402,8 @@ class TensorAssistantBackend(
         @Tool(description = "Set an alarm at a specific time of day on the user's device.")
         fun setAlarm(
             @ToolParam(description = "Hour in 24-hour form, 0-23.") hour: Int,
-            @ToolParam(description = "Minute past the hour, 0-59. Use 0 if not specified.") minute: Int,
-            @ToolParam(description = "Short name shown on the alarm. Use empty string if not specified.") label: String,
+            @ToolParam(description = "Minute past the hour, 0-59. Default 0.") minute: Int,
+            @ToolParam(description = "Short name shown on the alarm.") label: String,
         ): Map<String, String> = execute(
             ALARM_TOOL,
             mapOf("hour" to hour.toString(), "minute" to minute.toString(), "label" to label),
