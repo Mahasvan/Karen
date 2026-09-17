@@ -10,7 +10,7 @@ lifecycleViewmodelCompose = "2.11.0"
 kotlin = "2.4.20"
 composeBom = "2026.09.00"
 datastore = "1.2.1"
-litertlm = "0.17.0"
+litertlm = "0.17.1"
 commonmark = "1.0.0-alpha05"
 richtext = "1.0.0-alpha05"
 
