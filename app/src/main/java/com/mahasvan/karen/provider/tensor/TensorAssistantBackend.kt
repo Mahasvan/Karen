@@ -21,6 +21,7 @@ import com.google.ai.edge.litertlm.ToolParam
 import com.google.ai.edge.litertlm.ToolProvider
 import com.google.ai.edge.litertlm.ToolSet
 import com.google.ai.edge.litertlm.tool
+import com.mahasvan.karen.R
 import com.mahasvan.karen.assistant.AssistantBackend
 import com.mahasvan.karen.assistant.AssistantReply
 import com.mahasvan.karen.assistant.ModelUnavailableException
@@ -30,11 +31,13 @@ import com.mahasvan.karen.tools.calendar.CALENDAR_EVENT_TOOL
 import com.mahasvan.karen.tools.clock.ALARM_TOOL
 import com.mahasvan.karen.tools.clock.TIMER_TOOL
 import com.mahasvan.karen.tools.telephony.CALL_TOOL
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import java.io.File
+import java.io.IOException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -248,11 +251,14 @@ class TensorAssistantBackend(
 
         Log.d(TAG, "respond: sending prompt='$prompt', conversation alive=${conversation?.isAlive}")
 
+        val conversation = this@TensorAssistantBackend.conversation
+            ?: throw ModelUnavailableException("The on-device model is not loaded.")
+
         // LiteRT-LM streams token deltas; the UI's appendOrUpdateText replaces the bubble.
         // Tool calls happen during this collection (automaticToolCalling = on)
         // and queue results into completedTools; they are emitted after the text completes.
         try {
-            conversation!!
+            conversation
                 .sendMessageAsync(Message.user(prompt))
                 .collect { message ->
                     val text = message.text()
@@ -265,9 +271,16 @@ class TensorAssistantBackend(
                     accumulated.append(text)
                     emit(AssistantReply.Text(accumulated.toString(), id = responseId))
                 }
+        } catch (e: CancellationException) {
+            // A new turn started. Never user-visible; must propagate for structured concurrency.
+            throw e
+        } catch (e: ModelUnavailableException) {
+            throw e
+        } catch (e: IOException) {
+            throw e
         } catch (e: Exception) {
-            Log.e(TAG, "sendMessageAsync threw", e)
-            emit(AssistantReply.Text("Error: ${e.message ?: "unknown"}", id = responseId))
+            Log.e(TAG, "generation failed", e)
+            emit(AssistantReply.Text(context.getString(R.string.assistant_fallback_reply), id = responseId))
             return@flow
         }
 
@@ -296,7 +309,7 @@ class TensorAssistantBackend(
         // No text and no tools fired — the model emitted nothing useful.
         if (accumulated.isEmpty() && !toolFired) {
             Log.w(TAG, "Failsafe triggered: no text and no tools fired")
-            emit(AssistantReply.Text("I didn't catch that. Could you rephrase?", id = responseId))
+            emit(AssistantReply.Text(context.getString(R.string.assistant_fallback_reply), id = responseId))
         }
     }.flowOn(Dispatchers.IO)
 
