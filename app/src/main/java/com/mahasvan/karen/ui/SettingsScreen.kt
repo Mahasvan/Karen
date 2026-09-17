@@ -3,7 +3,6 @@ package com.mahasvan.karen.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -28,8 +27,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -43,7 +44,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.font.FontWeight
@@ -116,21 +116,13 @@ fun SettingsScreen(
             )
 
             SectionHeader(stringResource(R.string.settings_backend))
-            ChoiceRow(
-                title = stringResource(R.string.settings_backend_on_device),
-                summary = stringResource(R.string.settings_backend_on_device_summary),
-                selected = settings.backend == BackendChoice.OnDevice,
-                onClick = { onBackendChange(BackendChoice.OnDevice) },
-            )
-            ChoiceRow(
-                title = stringResource(R.string.settings_backend_remote),
-                summary = stringResource(R.string.settings_backend_remote_summary),
-                selected = settings.backend == BackendChoice.Remote,
-                onClick = { onBackendChange(BackendChoice.Remote) },
+            BackendSegmentedButton(
+                selected = settings.backend,
+                onSelect = onBackendChange,
             )
             if (settings.backend == BackendChoice.Remote) {
                 RemoteBackendSection(
-                    config = settings.remote,
+                    config = settings.remoteBackendConfig,
                     connection = connection,
                     onTestConnection = onTestConnection,
                     onModelChange = onModelChange,
@@ -265,37 +257,48 @@ private fun ConnectionStatus(connection: ConnectionState) {
     }
 }
 
-/** A settings row that behaves like a radio option: the whole surface selects it. */
+/**
+ * Two-option segmented control for picking the assistant backend. The summaries
+ * from the old radio rows don't fit a segmented button, so they live below it as
+ * a single line of secondary text tied to whichever side is selected.
+ */
 @Composable
-private fun ChoiceRow(
-    title: String,
-    summary: String,
-    selected: Boolean,
-    onClick: () -> Unit,
+private fun BackendSegmentedButton(
+    selected: BackendChoice,
+    onSelect: (BackendChoice) -> Unit,
 ) {
     val palette = AssistantTheme.palette
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyLarge,
-                color = palette.textPrimary,
-            )
-            Spacer(Modifier.size(2.dp))
-            Text(
-                text = summary,
-                style = MaterialTheme.typography.bodySmall,
-                color = palette.textSecondary,
-            )
+    val options = BackendChoice.entries
+    Column(modifier = Modifier.padding(horizontal = 20.dp)) {
+        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+            options.forEachIndexed { index, choice ->
+                SegmentedButton(
+                    selected = choice == selected,
+                    onClick = { onSelect(choice) },
+                    shape = SegmentedButtonDefaults.itemShape(index, options.size),
+                ) {
+                    Text(
+                        text = stringResource(
+                            when (choice) {
+                                BackendChoice.OnDevice -> R.string.settings_backend_on_device
+                                BackendChoice.Remote -> R.string.settings_backend_remote
+                            },
+                        ),
+                    )
+                }
+            }
         }
-        RadioButton(selected = selected, onClick = null)
+        Spacer(Modifier.size(6.dp))
+        Text(
+            text = stringResource(
+                when (selected) {
+                    BackendChoice.OnDevice -> R.string.settings_backend_on_device_summary
+                    BackendChoice.Remote -> R.string.settings_backend_remote_summary
+                },
+            ),
+            style = MaterialTheme.typography.bodySmall,
+            color = palette.textSecondary,
+        )
     }
 }
 

@@ -52,12 +52,12 @@ class AssistantBackendProvider(
             TensorAssistantBackend.defaultModelFile(context),
         )
 
-        BackendChoice.Remote -> OpenAiAssistantBackend(context, settings.remote)
+        BackendChoice.Remote -> OpenAiAssistantBackend(context, settings.remoteBackendConfig)
     }
 
     /** Everything that would produce a different backend, and nothing that wouldn't. */
     private fun AppSettings.backendKey(): Any = when (backend) {
         BackendChoice.OnDevice -> BackendChoice.OnDevice
-        BackendChoice.Remote -> remote
+        BackendChoice.Remote -> remoteBackendConfig
     }
 }

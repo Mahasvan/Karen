@@ -60,18 +60,25 @@ class OpenAiAssistantBackend(
         // Pending, not committed: anything thrown below leaves `history` untouched.
         val pending = history.copy().put(message(role = "user", content = prompt))
 
+        // fallback reply fires only when the whole turn produced nothing.
+        // Mirrors TensorAssistantBackend's `accumulated.isEmpty() && !toolFired` failsafe.
+        var emittedReply = false
+
         repeat(MAX_TOOL_ROUNDS) {
             val assistantMessage = client.chatCompletion(withSystemPrompt(pending), tools)
             pending.put(assistantMessage)
-            val toolCalls = assistantMessage.optJSONArray("tool_calls")
 
+            // Content can arrive alongside `tool_calls`. Emit text before executing the tools.
+            assistantMessage.optString("content").takeIf { it.isNotBlank() }?.let {
+                emit(reply(it, responseId))
+                emittedReply = true
+            }
+
+            val toolCalls = assistantMessage.optJSONArray("tool_calls")
             if (toolCalls == null || toolCalls.length() == 0) {
-                val text = assistantMessage.optString("content")
-                if (text.isBlank()) {
-                    Log.e(TAG, "Assistant message had neither content nor tool calls")
+                if (!emittedReply) {
+                    Log.e(TAG, "Assistant produced no content and fired no tools")
                     emit(reply(context.getString(R.string.assistant_fallback_reply), responseId))
-                } else {
-                    emit(reply(text, responseId))
                 }
                 history.replaceWith(pending)
                 return@flow
@@ -80,7 +87,10 @@ class OpenAiAssistantBackend(
             for (index in 0 until toolCalls.length()) {
                 val call = toolCalls.optJSONObject(index) ?: continue
                 val outcome = executeToolCall(call)
-                outcome.card?.let { emit(AssistantReply.Card(it)) }
+                outcome.card?.let {
+                    emit(AssistantReply.Card(it))
+                    emittedReply = true
+                }
                 pending.put(outcome.message)
             }
         }

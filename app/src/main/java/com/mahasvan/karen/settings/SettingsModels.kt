@@ -35,5 +35,5 @@ data class RemoteConfig(
 data class AppSettings(
     val colorTheme: ColorTheme = ColorTheme.MaterialYou,
     val backend: BackendChoice = BackendChoice.OnDevice,
-    val remote: RemoteConfig = RemoteConfig(),
+    val remoteBackendConfig: RemoteConfig = RemoteConfig(),
 )

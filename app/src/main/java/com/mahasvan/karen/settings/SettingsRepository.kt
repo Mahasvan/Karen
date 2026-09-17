@@ -35,7 +35,7 @@ class SettingsRepository(context: Context) {
             AppSettings(
                 colorTheme = prefs.readEnum(Keys.COLOR_THEME, ColorTheme.MaterialYou),
                 backend = prefs.readEnum(Keys.BACKEND, BackendChoice.OnDevice),
-                remote = RemoteConfig(
+                remoteBackendConfig = RemoteConfig(
                     baseUrl = prefs[Keys.REMOTE_BASE_URL] ?: defaults.baseUrl,
                     apiKey = prefs[Keys.REMOTE_API_KEY] ?: defaults.apiKey,
                     model = prefs[Keys.REMOTE_MODEL] ?: defaults.model,
