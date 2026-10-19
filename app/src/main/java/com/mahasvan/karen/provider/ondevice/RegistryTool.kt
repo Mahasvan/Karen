@@ -48,8 +48,8 @@ internal class RegistryTool(
         )
         .toString()
 
-    override fun execute(jsonArgs: String): String {
-        val args = JSONObject(jsonArgs)
+    override fun execute(paramsJsonString: String): String {
+        val args = JSONObject(paramsJsonString)
         val result = ToolExecutor.execute(
             context,
             tool.name,
