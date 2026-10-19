@@ -13,10 +13,10 @@ import com.mahasvan.karen.tools.ToolRegistry
 import com.mahasvan.karen.tools.ToolResult
 
 /**
- * Maps [ToolRegistry.tools] onto ADK [BaseTool]s for the remote (ADK) backend,
- * reading the registry as the single source of truth for names, descriptions
- * and parameter schemas. ADK drives the tool loop itself and takes
- * declarations from here.
+ * Maps [ToolRegistry.tools] onto ADK [BaseTool]s for the remote path —
+ * `ChatCompletions` returns function calls and ADK dispatches them through
+ * these. On-device does not use this: LiteRT-LM runs its own tool loop over
+ * `RegistryTool`s instead.
  *
  * [onResult] receives the full [ToolResult] of every execution — the card for
  * the UI, the message either way. The model only sees the `{"status": ...}`

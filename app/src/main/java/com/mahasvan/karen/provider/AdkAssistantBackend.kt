@@ -30,22 +30,22 @@ import java.util.concurrent.ConcurrentLinkedQueue
 private const val TAG = "AdkAssistantBackend"
 
 /**
- * [AssistantBackend] over Google ADK for the remote (OpenAI-compatible) path.
- * The caller supplies a factory for the [Model] — `ChatCompletions` pointed at
- * the configured endpoint — and ADK owns the tool loop, streaming and history.
- * The factory runs lazily on the first turn so construction stays off the main
- * thread. The on-device backend stays on direct LiteRT-LM (ADK's litertlm
- * adapter is pinned to a litertlm version incompatible with the NPU dispatch
- * library this project ships).
+ * The single [AssistantBackend] for every provider, over Google ADK.
  *
- * History lives in the runner's in-memory session, created lazily on the first
- * turn for the lifetime of this instance. [retry] replays the last prompt as a
- * new user turn; a turn cancelled or failed mid-run may leave a dangling user
- * message in the session, the same limitation the on-device LiteRT path has.
+ * The caller supplies a [Model] factory and chooses how tools are wired:
+ * remote passes `ChatCompletions` plus [registeredAdkTools] = true (ADK drives
+ * the tool loop through [adkTools]); on-device passes a LiteRT-LM-backed model
+ * with
+ * `registeredAdkTools = false` (LiteRT-LM's `Conversation` drives its own tool
+ * loop internally). Either way, tool results land in [completedTools] — the
+ * same queue, passed in as [sharedToolResults] for the on-device path — and
+ * are drained to cards after the text stream.
  *
- * Tool results arbitrate through [completedTools] the same way the old
- * backends did: ADK invokes the tool, the full [ToolResult] is queued here and
- * emitted after the text stream so cards land after the reply bubble.
+ * The factory runs lazily on the first turn so engine init/network setup stays
+ * off the main thread. History lives in the runner's in-memory session,
+ * created lazily for this instance's lifetime. [retry] replays the last prompt
+ * as a new user turn; a cancelled or failed mid-run turn may leave a dangling
+ * user message in the session — the same limitation the old backends had.
  */
 class AdkAssistantBackend(
     private val modelFactory: () -> Model,
@@ -155,7 +155,7 @@ class AdkAssistantBackend(
 
     override fun retry(): Flow<AssistantReply>? = lastPrompt?.let { respond(it) }
 
-    /** Closes the ADK model. `ChatCompletions` is not `AutoCloseable`, so this is a no-op for the remote path. */
+    /** Closes the model if it is `AutoCloseable` (LitertLmModel's conversation; `ChatCompletions` is a no-op). */
     override fun close() {
         (model as? AutoCloseable)?.let { runCatching { it.close() } }
         model = null
@@ -165,10 +165,9 @@ class AdkAssistantBackend(
 
     private fun createRunner(): InMemoryRunner {
         val model = modelFactory().also { this.model = it }
-        // Instruction.Provider resolves per turn, so the clock line stays current
-        // across a long conversation instead of freezing at agent construction.
-        // For on-device, the model ignores it (the Conversation owns its frozen
-        // system instruction) — but ChatCompletions sends it on every request.
+        // Instruction.Provider resolves per turn, so the clock line stays
+        // current: ChatCompletions sends it on every request. LitertLmModel
+        // ignores it — the Conversation's instruction is frozen at creation.
         val agent = LlmAgent(
             name = "assistant",
             model = model,

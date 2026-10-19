@@ -43,7 +43,7 @@ private fun Message.text(): String =
 
 /**
  * Google LitertLm on-device model exposed as an ADK [Model], so the same
- * [AdkAssistantBackend] that fronts `ChatCompletions` can also drive on-device
+ * `AdkAssistantBackend` that fronts `ChatCompletions` can also drive on-device
  * inference.
  *
  * [generateContent] takes the last user message from [LlmRequest.contents] and
@@ -115,7 +115,7 @@ class LitertLmModel(
      * Opens a fresh conversation on the shared engine, with the same
      * configuration the old direct backend used: frozen system instruction,
      * no sampler config (NPU handles sampling internally), and LiteRT-LM's
-     * native tool loop over [AssistantToolSet].
+     * native tool loop over [RegistryTool] adapters.
      */
     @OptIn(ExperimentalApi::class)
     private fun createConversation(): Conversation =

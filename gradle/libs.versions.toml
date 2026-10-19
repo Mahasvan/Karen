@@ -36,7 +36,7 @@ androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "l
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
 litertlm-android = { group = "com.google.ai.edge.litertlm", name = "litertlm-android", version.ref = "litertlm" }
 google-adk-core-android = { group = "com.google.adk", name = "google-adk-kotlin-core-android", version.ref = "adk" }
-google-adk-litertlm-android = { group = "com.google.adk", name = "google-adk-kotlin-litertlm-android", version.ref = "adk" }
+
 google-adk-openai-android = { group = "com.google.adk", name = "google-adk-kotlin-integrations-openai-android", version.ref = "adk" }
 kotlin-reflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect", version.ref = "kotlin" }
 commonmark = { group = "com.halilibo.compose-richtext", name = "richtext-commonmark", version.ref = "commonmark" }
