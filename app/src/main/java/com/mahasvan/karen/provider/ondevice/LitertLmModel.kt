@@ -21,18 +21,11 @@ import com.google.ai.edge.litertlm.ExperimentalFlags
 import com.google.ai.edge.litertlm.LogSeverity
 import com.google.ai.edge.litertlm.Message
 import com.google.ai.edge.litertlm.SupportedModalities
-import com.google.ai.edge.litertlm.Tool
-import com.google.ai.edge.litertlm.ToolParam
-import com.google.ai.edge.litertlm.ToolSet
 import com.google.ai.edge.litertlm.tool
+import com.mahasvan.karen.tools.ToolRegistry
 import com.mahasvan.karen.assistant.ModelUnavailableException
 import com.mahasvan.karen.assistant.systemInstructionLines
-import com.mahasvan.karen.tools.ToolExecutor
 import com.mahasvan.karen.tools.ToolResult
-import com.mahasvan.karen.tools.calendar.CALENDAR_EVENT_TOOL
-import com.mahasvan.karen.tools.clock.ALARM_TOOL
-import com.mahasvan.karen.tools.clock.TIMER_TOOL
-import com.mahasvan.karen.tools.telephony.CALL_TOOL
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -128,7 +121,7 @@ class LitertLmModel(
             ConversationConfig(
                 systemInstruction = Contents.of(systemInstructionLines().map { LitertContent.Text(it) }),
                 samplerConfig = null,
-                tools = listOf(tool(AssistantToolSet(context, completedTools))),
+                tools = ToolRegistry.tools.map { tool(RegistryTool(it, context, completedTools)) },
             ),
         ).also { conversation = it }
 
@@ -138,60 +131,6 @@ class LitertLmModel(
         conversation = null
     }
 
-    /**
-     * Bridge from LiteRT-LM's reflection-based tool calling to [ToolExecutor].
-     * `@Tool` method names convert camelCase → snake_case for the model. Methods
-     * build the arguments map and delegate to [ToolExecutor.execute], which
-     * validates, fires the intent, and returns a [ToolResult]. The return value
-     * is what LiteRT-LM serializes back to the model; the queued [ToolResult]
-     * side effect is what [AdkAssistantBackend] drains to render cards.
-     */
-    @Suppress("unused") // method bodies invoked via reflection by LiteRT-LM
-    internal class AssistantToolSet(
-        private val context: Context,
-        private val completedTools: ConcurrentLinkedQueue<ToolResult>,
-    ) : ToolSet {
-
-        @Tool(description = "Set an alarm at a specific time of day on the user's device.")
-        fun setAlarm(
-            @ToolParam(description = "Hour in 24-hour form, 0-23.") hour: Int,
-            @ToolParam(description = "Minute past the hour, 0-59. Default 0.") minute: Int,
-            @ToolParam(description = "Short name shown on the alarm.") label: String,
-        ): Map<String, String> = execute(
-            ALARM_TOOL,
-            mapOf("hour" to hour.toString(), "minute" to minute.toString(), "label" to label),
-        )
-
-        @Tool(description = "Start a countdown timer on the user's device.")
-        fun startTimer(
-            @ToolParam(description = "Duration in seconds, 1-86400.") seconds: Int,
-            @ToolParam(description = "Short name shown on the timer. Use empty string if not specified.") label: String,
-        ): Map<String, String> = execute(
-            TIMER_TOOL,
-            mapOf("seconds" to seconds.toString(), "label" to label),
-        )
-
-        @Tool(description = "Add an event to the user's calendar.")
-        fun createCalendarEvent(
-            @ToolParam(description = "Title of the event.") title: String,
-            @ToolParam(description = "Start time in the format YYYY-MM-DDTHH:MM:SS. Defaults to current time if not specified.") startTime: String,
-            @ToolParam(description = "End time in the format YYYY-MM-DDTHH:MM:SS. Defaults to start time plus one hour if not specified.") endTime: String,
-        ): Map<String, String> = execute(
-            CALENDAR_EVENT_TOOL,
-            mapOf("title" to title, "start_time" to startTime, "end_time" to endTime),
-        )
-
-        @Tool(description = "Open the dialer pre-filled with a phone number, or look up a contact by name. Never places the call; the user presses dial.")
-        fun dial(
-            @ToolParam(description = "A phone number or a contact name.") target: String,
-        ): Map<String, String> = execute(
-            CALL_TOOL,
-            mapOf("target" to target),
-        )
-
-        private fun execute(toolName: String, arguments: Map<String, String>): Map<String, String> =
-            ToolExecutor.execute(context, toolName, arguments, onResult = completedTools::add)
-    }
 
     companion object {
         private const val MODEL_FILENAME = "gemma-4-E2B-it_Google_Tensor_G5.litertlm"
