@@ -1,7 +1,7 @@
 package com.mahasvan.karen.provider
 
 import com.google.ai.edge.litertlm.ToolParam
-import com.mahasvan.karen.provider.LitertLmModel
+import com.mahasvan.karen.provider.ondevice.LitertLmModel
 import com.mahasvan.karen.tools.ToolRegistry
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

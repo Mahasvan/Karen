@@ -7,7 +7,7 @@
 # LiteRT-LM tool calling dispatches via kotlin.reflect over KFunction. The ToolSet class
 # and its @Tool-annotated methods must survive minification or the runtime cannot find them.
 # See references/TOOL_CALLING_NOTES.md §3.
--keep class com.mahasvan.karen.provider.tensor.TensorAssistantBackend$AssistantToolSet { *; }
+-keep class com.mahasvan.karen.provider.ondevice.LitertLmModel$AssistantToolSet { *; }
 -keep @com.google.ai.edge.litertlm.Tool class * { *; }
 -keepclassmembers class * {
     @com.google.ai.edge.litertlm.ToolParam *;

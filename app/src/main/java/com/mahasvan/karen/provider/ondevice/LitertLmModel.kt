@@ -1,4 +1,4 @@
-package com.mahasvan.karen.provider.adk
+package com.mahasvan.karen.provider.ondevice
 
 import android.content.Context
 import android.os.Build

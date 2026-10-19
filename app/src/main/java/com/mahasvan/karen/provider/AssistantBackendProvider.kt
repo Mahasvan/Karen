@@ -5,12 +5,13 @@ import com.google.adk.kt.models.openai.ChatCompletions
 import com.google.adk.kt.types.HttpOptions
 import com.mahasvan.karen.assistant.AssistantBackend
 import com.mahasvan.karen.assistant.ModelUnavailableException
-import com.mahasvan.karen.provider.adk.AdkAssistantBackend
-import com.mahasvan.karen.provider.tensor.TensorAssistantBackend
+import com.mahasvan.karen.provider.ondevice.LitertLmModel
 import com.mahasvan.karen.settings.AppSettings
 import com.mahasvan.karen.settings.BackendChoice
 import com.mahasvan.karen.settings.SettingsRepository
+import com.mahasvan.karen.tools.ToolResult
 import kotlinx.coroutines.flow.first
+import java.util.concurrent.ConcurrentLinkedQueue
 
 /**
  * The single place that decides which [AssistantBackend] is live, so the ViewModel
@@ -50,10 +51,18 @@ class AssistantBackendProvider(
     }
 
     private fun create(settings: AppSettings): AssistantBackend = when (settings.backend) {
-        BackendChoice.OnDevice -> TensorAssistantBackend(
-            context,
-            TensorAssistantBackend.defaultModelFile(context),
-        )
+        // LiteRT-LM drives its own tool loop inside the Conversation, so ADK
+        // gets no tools registered. The shared queue is where the model
+        // deposits tool results for the backend to drain into cards.
+        BackendChoice.OnDevice -> run {
+            val toolResults = ConcurrentLinkedQueue<ToolResult>()
+            AdkAssistantBackend(
+                { LitertLmModel(context, LitertLmModel.defaultModelFile(context), toolResults) },
+                context,
+                registeredAdkTools = false,
+                sharedToolResults = toolResults,
+            )
+        }
 
         BackendChoice.Remote -> AdkAssistantBackend(
             {
