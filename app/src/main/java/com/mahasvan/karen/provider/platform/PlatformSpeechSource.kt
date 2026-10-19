@@ -57,22 +57,22 @@ class PlatformSpeechSource(private val context: Context) : SpeechSource {
             private var lastPartial = ""
 
             override fun onReadyForSpeech(params: Bundle?) {
-                Log.d(TAG, "onReadyForSpeech")
+                Log.v(TAG, "onReadyForSpeech")
             }
 
             override fun onBeginningOfSpeech() {
-                Log.d(TAG, "onBeginningOfSpeech")
+                Log.v(TAG, "onBeginningOfSpeech")
             }
 
             override fun onRmsChanged(rmsdB: Float) {
-                Log.d(TAG, "onRmsChanged: $rmsdB")
+                Log.v(TAG, "onRmsChanged: $rmsdB")
                 trySend(SpeechEvent.Amplitude(rmsdB))
             }
 
             override fun onBufferReceived(buffer: ByteArray?) {}
 
             override fun onEndOfSpeech() {
-                Log.d(TAG, "onEndOfSpeech")
+                Log.v(TAG, "onEndOfSpeech")
             }
 
             override fun onError(error: Int) {
