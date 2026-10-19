@@ -44,6 +44,15 @@ android {
             // must be a real extracted file rather than a compressed APK entry.
             useLegacyPackaging = true
         }
+        resources {
+            // Duplicate across ADK's transitive google-auth / api-common / httpclient jars.
+            excludes += listOf(
+                "META-INF/INDEX.LIST",
+                "META-INF/DEPENDENCIES",
+                "META-INF/LICENSE.txt",
+                "META-INF/NOTICE.txt",
+            )
+        }
     }
 }
 
@@ -67,6 +76,15 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.litertlm.android)
+    // kxml2 leaks in via ADK's KMP publication for its JVM target; the Android
+    // variant never references it (verified: no org.xmlpull refs in the AARs)
+    // and it collides with the platform's org.xmlpull classes under R8.
+    listOf(
+        libs.google.adk.core.android,
+        libs.google.adk.openai.android,
+    ).forEach { dep ->
+        implementation(dep) { exclude(group = "net.sf.kxml", module = "kxml2") }
+    }
     implementation(libs.commonmark)
     implementation(libs.richtext)
     implementation(libs.richtext.ui)

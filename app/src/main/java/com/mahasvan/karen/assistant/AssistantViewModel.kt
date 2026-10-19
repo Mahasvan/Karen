@@ -1,6 +1,7 @@
 package com.mahasvan.karen.assistant
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.viewModelScope
@@ -147,6 +148,7 @@ class AssistantViewModel(
     }
 
     private fun fail(cause: Throwable) {
+        Log.e(TAG, "turn failed", cause)
         _uiState.update {
             it.copy(state = AssistantState.Error, error = cause.toAssistantError())
         }
@@ -211,6 +213,8 @@ class AssistantViewModel(
     }
 
     companion object {
+        private const val TAG = "AssistantViewModel"
+
         val Factory = viewModelFactory {
             initializer {
                 val app = this[APPLICATION_KEY] as Application

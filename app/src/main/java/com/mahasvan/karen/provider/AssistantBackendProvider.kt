@@ -1,8 +1,11 @@
 package com.mahasvan.karen.provider
 
 import android.content.Context
+import com.google.adk.kt.models.openai.ChatCompletions
+import com.google.adk.kt.types.HttpOptions
 import com.mahasvan.karen.assistant.AssistantBackend
-import com.mahasvan.karen.provider.openai.OpenAiAssistantBackend
+import com.mahasvan.karen.assistant.ModelUnavailableException
+import com.mahasvan.karen.provider.adk.AdkAssistantBackend
 import com.mahasvan.karen.provider.tensor.TensorAssistantBackend
 import com.mahasvan.karen.settings.AppSettings
 import com.mahasvan.karen.settings.BackendChoice
@@ -52,7 +55,23 @@ class AssistantBackendProvider(
             TensorAssistantBackend.defaultModelFile(context),
         )
 
-        BackendChoice.Remote -> OpenAiAssistantBackend(context, settings.remoteBackendConfig)
+        BackendChoice.Remote -> AdkAssistantBackend(
+            {
+                val config = settings.remoteBackendConfig
+                if (!config.isComplete) {
+                    throw ModelUnavailableException(
+                        "Set a base URL and pick a model in Settings before using the remote backend.",
+                    )
+                }
+                ChatCompletions(
+                    name = config.model,
+                    // Local servers (llama.cpp, Ollama, LM Studio) typically need no auth.
+                    apiKey = config.apiKey.ifBlank { null },
+                    httpOptions = HttpOptions(baseUrl = config.baseUrl),
+                )
+            },
+            context,
+        )
     }
 
     /** Everything that would produce a different backend, and nothing that wouldn't. */

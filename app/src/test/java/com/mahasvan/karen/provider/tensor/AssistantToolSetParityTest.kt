@@ -12,9 +12,9 @@ import com.google.ai.edge.litertlm.Tool as ToolAnnotation
 /**
  * [TensorAssistantBackend.AssistantToolSet]'s `@Tool`/`@ToolParam` annotations are
  * a hand-written copy of [ToolRegistry]'s schema — annotations are compile-time
- * and cannot be generated from data (see [com.mahasvan.karen.tools.OpenAiToolSchema]
- * for the copy that can). Nothing else catches the two drifting: `Map<String, String>`
- * arguments compile clean whether or not the keys agree with what the tool reads.
+ * and cannot be generated from data. Nothing else catches the two drifting:
+ * `Map<String, String>` arguments compile clean whether or not the keys agree
+ * with what the tool reads.
  *
  * This test is that guard. It reflects over every `@Tool` method exactly the way
  * LiteRT-LM's `ReflectionTool` does at runtime — same camelCase-to-snake_case name
