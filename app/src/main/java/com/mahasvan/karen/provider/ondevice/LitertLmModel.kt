@@ -10,7 +10,8 @@ import com.google.adk.kt.types.Content
 import com.google.adk.kt.types.Part
 import com.google.adk.kt.types.Role
 import com.google.ai.edge.litertlm.Backend
-import com.google.ai.edge.litertlm.Capabilities
+import com.google.ai.edge.litertlm.LlmCapability
+import com.google.ai.edge.litertlm.ModelInfo
 import com.google.ai.edge.litertlm.Contents
 import com.google.ai.edge.litertlm.Conversation
 import com.google.ai.edge.litertlm.ConversationConfig
@@ -74,14 +75,14 @@ class LitertLmModel(
 
         val aggregated = StringBuilder()
         conversation.sendMessageAsync(Message.user(prompt)).collect { message ->
+            val text = message.text()
             Log.d(
                 TAG,
-                "chunk: text=${message.text().length} chars, " +
+                "chunk: text='${text.replace("\n", "\\n")}', " +
                         "toolCalls=${message.toolCalls.size}, " +
                         "parts=${message.contents.contents.map { it::class.simpleName }}",
             )
-            val text = message.text()
-            if (text.isNotBlank()) {
+            if (text != "") {
                 aggregated.append(text)
                 if (stream) {
                     emit(
@@ -96,7 +97,8 @@ class LitertLmModel(
 
         Log.d(
             TAG,
-            "turn complete: accumulated=${aggregated.length} chars, tools=${completedTools.size}",
+            "turn complete: accumulated='${aggregated.toString().replace("\n", "\\n")}', " +
+                    "tools=${completedTools.size}",
         )
 
         // Turn boundary: the aggregate carries the turn's full text. This is what
@@ -247,12 +249,15 @@ class LitertLmModel(
 
         private fun readModelCapabilities(modelFile: File): ModelCapabilities =
             runCatching {
-                Capabilities(modelFile.absolutePath).use { c ->
+                ModelInfo.from(modelFile.absolutePath).use { info ->
+                    // ModelInfo does not expose LlmCapability on its abstract
+                    // API; the concrete implementation may still implement it.
+                    val cap = info as? LlmCapability
                     ModelCapabilities(
-                        speculativeDecoding = c.hasSpeculativeDecodingSupport(),
-                        thinking = c.supportsThinking(),
-                        functionCalling = c.supportsFunctionCalling(),
-                        inputModalities = c.inputModalities(),
+                        speculativeDecoding = cap?.hasSpeculativeDecodingSupport() ?: false,
+                        thinking = cap?.supportsThinking() ?: false,
+                        functionCalling = cap?.supportsFunctionCalling() ?: false,
+                        inputModalities = info.inputModalities(),
                     )
                 }
             }.getOrElse {
